@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Token DApp</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    /* ── PREMIUM GALACTIC COLOR SCHEME ── */
+    :root {
+      --bg-main: #060713;
+      --bg-card: rgba(13, 15, 36, 0.75);
+      --border-color: rgba(147, 51, 234, 0.15);
+      --text-main: #f8fafc;
+      --text-muted: #64748b;
+      
+      /* Neon Accent Base */
+      --neon-purple: #a855f7;
+      --neon-cyan: #06b6d4;
+      --neon-emerald: #10b981;
+      --neon-rose: #f43f5e;
+      --neon-amber: #f59e0b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    
+    body {
+      background: radial-gradient(circle at 50% -20%, #2e1065 0%, var(--bg-main) 65%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 50px 20px;
+    }
+
+    .container { width: 100%; max-width: 680px; }
+    
+    /* Elegant Header */
+    header { text-align: center; margin-bottom: 30px; }
+    h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, #fff 30%, var(--neon-cyan) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { color: var(--text-muted); font-size: 13px; margin-top: 6px; letter-spacing: 0.5px; }
+    
+    /* Live Status Module */
+    .status {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 25px;
+      padding: 14px;
+      background: rgba(4, 5, 15, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    }
+    .connected { color: var(--neon-emerald) !important; border-color: rgba(16, 185, 129, 0.25); box-shadow: 0 0 20px rgba(16, 185, 129, 0.08); }
+
+    /* Clean Dividers */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--neon-purple);
+      margin: 35px 0 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(168, 85, 247, 0.3), transparent); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* Interactive Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      transition: all 0.25s ease;
+    }
+    .card:hover { border-color: rgba(6, 182, 212, 0.3); box-shadow: 0 10px 35px rgba(6, 182, 212, 0.04); }
+    .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .card h2 { color: #fff; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    
+    /* Input Customization */
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(5, 6, 15, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    input:focus { outline: none; border-color: var(--neon-cyan); background: rgba(5, 6, 15, 0.9); }
+    input::placeholder { color: #475569; }
+
+    /* ── ALL BUTTON BASES & DYNAMIC CLICK STATES ── */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Static Themes */
+    .btn-blue   { background: rgba(6, 182, 212, 0.1); color: var(--neon-cyan); border: 1px solid rgba(6, 182, 212, 0.25); }
+    .btn-green  { background: rgba(16, 185, 129, 0.1); color: var(--neon-emerald); border: 1px solid rgba(16, 185, 129, 0.25); }
+    .btn-red    { background: rgba(244, 63, 94, 0.1); color: var(--neon-rose); border: 1px solid rgba(244, 63, 94, 0.25); }
+    .btn-orange { background: rgba(245, 158, 11, 0.1); color: var(--neon-amber); border: 1px solid rgba(245, 158, 11, 0.25); }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    /* Dynamic Flash Glow Classes Triggered via Script on Click */
+    .btn.clicked-loading-blue { background: var(--neon-cyan) !important; color: #000 !important; box-shadow: 0 0 20px var(--neon-cyan); transform: scale(0.97); }
+    .btn.clicked-loading-green { background: var(--neon-emerald) !important; color: #000 !important; box-shadow: 0 0 20px var(--neon-emerald); transform: scale(0.97); }
+    .btn.clicked-loading-red { background: var(--neon-rose) !important; color: #fff !important; box-shadow: 0 0 20px var(--neon-rose); transform: scale(0.97); }
+    .btn.clicked-loading-orange { background: var(--neon-amber) !important; color: #000 !important; box-shadow: 0 0 20px var(--neon-amber); transform: scale(0.97); }
+    
+    .btn-row { display: flex; gap: 10px; }
+    
+    /* Terminal Console Outputs */
+    .result {
+      margin-top: 14px;
+      padding: 14px;
+      background: #03040b;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-left: 3px solid var(--neon-purple);
+      border-radius: 4px 12px 12px 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      word-break: break-all;
+      white-space: pre-wrap;
+      display: none;
+    }
+
+    /* Status Badges */
+    .badge { font-size: 9px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; padding: 3px 8px; border-radius: 6px; }
+    .badge-owner { background: rgba(245, 158, 11, 0.08); color: var(--neon-amber); border: 1px solid rgba(245, 158, 11, 0.15); }
+    .badge-read  { background: rgba(6, 182, 212, 0.08); color: var(--neon-cyan); border: 1px solid rgba(6, 182, 212, 0.15); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🪙 My Token DApp</h1>
+    <p class="subtitle">Next-Gen Reactive ERC-20 Ledger Terminal</p>
+  </header>
+
+  <p class="status" id="status">⚡ Connection Offline — Core Awaiting Activation</p>
+
+  <!-- ── CARD: INITIALIZE WALLET ── -->
+  <div class="card" style="border-color: rgba(6, 182, 212, 0.2);">
+    <div class="card-header-row">
+      <h2>🔌 Authenticate Secure Wallet</h2>
+    </div>
+    <button class="btn btn-blue" id="btn-connect" onclick="handleAction('btn-connect', 'blue', 'Initializing Connection...', connectWallet)">Connect MetaMask</button>
+    <div class="result" id="walletResult"></div>
+  </div>
+
+  <!-- ── SECTOR: READ (CHAIN DATA) ── -->
+  <div class="section-title">📖 Chain Infrastructure Node (No Gas)</div>
+
+  <div class="grid-2">
+    <!-- Token Info (Includes Total Supply, Decimals, Name, Symbol) -->
+    <div class="card">
+      <div class="card-header-row">
+        <h2>📊 Token Metadata & Specs</h2>
+        <span class="badge badge-read">read</span>
+      </div>
+      <button class="btn btn-blue" id="btn-info" onclick="handleAction('btn-info', 'blue', 'Querying Specs...', getTokenInfo)">Fetch Specifications</button>
+      <div class="result" id="infoResult"></div>
+    </div>
+
+    <!-- verify paused state -->
+    <div class="card">
+      <div class="card-header-row">
+        <h2>⏸️ Circuit Breaker State</h2>
+        <span class="badge badge-read">read</span>
+      </div>
+      <button class="btn btn-blue" id="btn-paused" onclick="handleAction('btn-paused', 'blue', 'Checking Intercept...', checkPaused)">Verify State (Paused?)</button>
+      <div class="result" id="pausedResult"></div>
+    </div>
+  </div>
+
+  <!-- balanceOf -->
+  <div class="card">
+    <div class="card-header-row">
+      <h2>💰 Address Balance Inspection</h2>
+      <span class="badge badge-read">read</span>
+    </div>
+    <input type="text" id="balanceAddress" placeholder="Target Account Hex String (0x...)"/>
+    <button class="btn btn-blue" id="btn-balance" onclick="handleAction('btn-balance', 'blue', 'Scanning Ledger...', checkBalance)">Check Balance Of</button>
+    <div class="result" id="balanceResult"></div>
+  </div>
+
+  <!-- [TARTEEB UPDATE 2/3] allowance (Read function is placed here before executing mutations) -->
+  <div class="card">
+    <div class="card-header-row">
+      <h2>🔍 Delegated Allowances (Check Limit)</h2>
+      <span class="badge badge-read">read</span>
+    </div>
+    <input type="text" id="allowanceOwner" placeholder="Asset Owner address (0x...)"/>
+    <input type="text" id="allowanceSpender" placeholder="Delegate Spender address (0x...)"/>
+    <button class="btn btn-blue" id="btn-allowance" onclick="handleAction('btn-allowance', 'blue', 'Analyzing Allocation...', checkAllowance)">Examine Allowance</button>
+    <div class="result" id="allowanceResult"></div>
+  </div>
+
+  <!-- ── SECTOR: WRITE & UTILITY ENGINE ── -->
+  <div class="section-title">✍️ State Mutation Engine (Gas Required)</div>
+
+  <!-- transfer -->
+  <div class="card">
+    <div class="card-header-row">
+      <h2>📤 Transfer Assets</h2>
+    </div>
+    <input type="text" id="transferTo" placeholder="Recipient address (0x...)"/>
+    <input type="number" id="transferAmount" placeholder="Amount to dispatch"/>
+    <button class="btn btn-green" id="btn-transfer" onclick="handleAction('btn-transfer', 'green', 'Broadcasting TX...', transferTokens)">Execute Transfer</button>
+    <div class="result" id="transferResult"></div>
+  </div>
+
+  <!-- [TARTEEB UPDATE 1/3] approve (Placed first in the write pipeline) -->
+  <div class="card">
+    <div class="card-header-row">
+      <h2>🛡️ Approve Spender (Grant Allowance)</h2>
+    </div>
+    <input type="text" id="pipeSpenderApprove" placeholder="Spender Address (0x...)"/>
+    <input type="number" id="pipeAmountApprove" placeholder="Token units limit to approve"/>
+    <button class="btn btn-blue" id="btn-pipe-approve" onclick="handleAction('btn-pipe-approve', 'blue', 'Authorizing...', pipeApprove)">Approve Spender</button>
+    <div class="result" id="approveResult"></div>
+  </div>
+
+  <!-- [TARTEEB UPDATE 3/3] transferFrom (Placed after allowance check/approve logic) -->
+  <div class="card">
+    <div class="card-header-row">
+      <h2>🔁 Transfer From (Execute Delegated Route)</h2>
+    </div>
+    <input type="text" id="pipeOwnerTF" placeholder="Source / Owner Address (From)"/>
+    <input type="text" id="pipeRecipientTF" placeholder="Recipient Address (To)"/>
+    <input type="number" id="pipeAmountTF" placeholder="Token units to transfer"/>
+    <button class="btn btn-green" id="btn-pipe-transferfrom" onclick="handleAction('btn-pipe-transferfrom', 'green', 'Routing...', pipeTransferFrom)">Transfer From</button>
+    <div class="result" id="transferFromResult"></div>
+  </div>
+
+  <!-- ── SECTOR: CORE ENGINE CONTROLS (QUICK FUNCTIONS) ── -->
+  <div class="section-title">🛠️ Core Ledger Utilities & Permissions</div>
+
+  <div class="grid-2">
+    <!-- Quick Mint -->
+    <div class="card">
+      <div class="card-header-row">
+        <h2>✨ Mint Supply</h2>
+        <span class="badge badge-owner">owner</span>
+      </div>
+      <input type="text" id="quickMintTo" placeholder="Recipient (0x...)"/>
+      <input type="number" id="quickMintAmount" placeholder="Units to forge"/>
+      <button class="btn btn-orange" id="btn-quick-mint" onclick="handleAction('btn-quick-mint', 'orange', 'Forging...', quickMint)">Mint Tokens</button>
+      <div class="result" id="quickMintResult"></div>
+    </div>
+
+    <!-- Quick Burn -->
+    <div class="card">
+      <div class="card-header-row">
+        <h2>🔥 Burn Supply</h2>
+      </div>
+      <input type="number" id="quickBurnAmount" placeholder="Units to incinerate"/>
+      <div style="margin-bottom: 40px;"></div> <!-- visual spacer alignment -->
+      <button class="btn btn-red" id="btn-quick-burn" onclick="handleAction('btn-quick-burn', 'red', 'Incinerating...', quickBurn)">Burn Tokens</button>
+      <div class="result" id="quickBurnResult"></div>
+    </div>
+  </div>
+
+  <!-- Global pause / unpause -->
+  <div class="card" style="border-color: rgba(245, 158, 11, 0.15);">
+    <div class="card-header-row">
+      <h2>⏯️ Global Operational Interrupter (Pause / Unpause)</h2>
+      <span class="badge badge-owner">owner only</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-red" id="btn-pause" style="width:50%" onclick="handleAction('btn-pause', 'red', 'Halting...', pauseToken)">⏸ Pause Token</button>
+      <button class="btn btn-green" id="btn-unpause" style="width:50%" onclick="handleAction('btn-unpause', 'green', 'Activating...', unpauseToken)">▶ Unpause Token</button>
+    </div>
+    <div class="result" id="pauseResult"></div>
+  </div>
+
+</div>
+
+<script>
+  // ── PASTE YOUR CONTRACT ADDRESS HERE ──
+  const CONTRACT_ADDRESS = "0x88D72FBa183F16cEC24439d55683Ea3B862a8e6c";
+
+  const ABI = [
+    "function name() view returns (string)",
+    "function symbol() view returns (string)",
+    "function decimals() view returns (uint8)",
+    "function totalSupply() view returns (uint256)",
+    "function paused() view returns (bool)",
+    "function owner() view returns (address)",
+    "function balanceOf(address) view returns (uint256)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function transfer(address to, uint256 amount) returns (bool)",
+    "function approve(address spender, uint256 amount) returns (bool)",
+    "function transferFrom(address from, address to, uint256 amount) returns (bool)",
+    "function mint(address to, uint256 amount)",
+    "function burn(uint256 amount)",
+    "function pause()",
+    "function unpause()"
+  ];
+
+  let provider, signer, contract;
+
+  /* ── ENGINE TO MANAGE INTERACTIVE CLICK FIELDS ── */
+  async function handleAction(buttonId, colorTheme, activeText, coreFunction) {
+    const btn = document.getElementById(buttonId);
+    if (!btn) return;
+    
+    const originalText = btn.innerHTML;
+    const loadingClass = `clicked-loading-${colorTheme}`;
+    
+    btn.classList.add(loadingClass);
+    btn.textContent = activeText;
+    btn.style.pointerEvents = "none"; 
+
+    try {
+      await coreFunction();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      btn.classList.remove(loadingClass);
+      btn.innerHTML = originalText;
+      btn.style.pointerEvents = "auto";
+    }
+  }
+
+  function showResult(id, message, isError = false) {
+    const el = document.getElementById(id);
+    el.style.display = "block";
+    el.style.borderColor = isError ? "var(--neon-rose)" : "var(--neon-emerald)";
+    el.style.color = isError ? "#f43f5e" : "#34d399";
+    el.textContent = message;
+  }
+
+  // ── CONNECT ──
+  async function connectWallet() {
+    try {
+      if (!window.ethereum) { showResult("walletResult", "MetaMask not found! Please install it.", true); return; }
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      signer = provider.getSigner();
+      contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+      const address = await signer.getAddress();
+      const short = address.slice(0,6) + "..." + address.slice(-4);
+      document.getElementById("status").textContent = "📡 Layer Connected: " + short;
+      document.getElementById("status").className = "status connected";
+      showResult("walletResult", "Handshake Established:\n" + address);
+    } catch (err) { showResult("walletResult", "Error: " + err.message, true); }
+  }
+
+  // ── READ: Token Info ──
+  async function getTokenInfo() {
+    try {
+      if (!contract) { showResult("infoResult", "Connect wallet first!", true); return; }
+      const name     = await contract.name();
+      const symbol   = await contract.symbol();
+      const decimals = await contract.decimals();
+      const supply   = await contract.totalSupply();
+      const isPaused = await contract.paused();
+      const ownerAddr= await contract.owner();
+      const formatted = ethers.utils.formatUnits(supply, decimals);
+      showResult("infoResult",
+        "• Name:       " + name + "\n" +
+        "• Symbol:     " + symbol + "\n" +
+        "• Decimals:   " + decimals + "\n" +
+        "• Supply Cap: " + formatted + " " + symbol + "\n" +
+        "• Intercept:  " + (isPaused ? "PAUSED" : "OPERATIONAL") + "\n" +
+        "• Owner Root: " + ownerAddr
+      );
+    } catch (err) { showResult("infoResult", "Error: " + err.message, true); }
+  }
+
+  // ── READ: balanceOf ──
+  async function checkBalance() {
+    try {
+      if (!contract) { showResult("balanceResult", "Connect wallet first!", true); return; }
+      const address = document.getElementById("balanceAddress").value;
+      const balance = await contract.balanceOf(address);
+      const decimals = await contract.decimals();
+      const formatted = ethers.utils.formatUnits(balance, decimals);
+      showResult("balanceResult", "📬 Account Balance:\n" + formatted + " Tokens");
+    } catch (err) { showResult("balanceResult", "Error: " + err.message, true); }
+  }
+
+  // ── READ: allowance ──
+  async function checkAllowance() {
+    try {
+      if (!contract) { showResult("allowanceResult", "Connect wallet first!", true); return; }
+      const ownerAddr   = document.getElementById("allowanceOwner").value;
+      const spenderAddr = document.getElementById("allowanceSpender").value;
+      const amount = await contract.allowance(ownerAddr, spenderAddr);
+      const decimals = await contract.decimals();
+      const formatted = ethers.utils.formatUnits(amount, decimals);
+      showResult("allowanceResult", "🛡️ Approved Delegation Window:\n" + formatted + " Tokens");
+    } catch (err) { showResult("allowanceResult", "Error: " + err.message, true); }
+  }
+
+  // ── READ: paused ──
+  async function checkPaused() {
+    try {
+      if (!contract) { showResult("pausedResult", "Connect wallet first!", true); return; }
+      const isPaused = await contract.paused();
+      showResult("pausedResult", isPaused ? "🚨 CRITICAL: Contract is globally PAUSED." : "⚡ NORMAL: Smart Contract execution is ACTIVE.");
+    } catch (err) { showResult("pausedResult", "Error: " + err.message, true); }
+  }
+
+  // ── WRITE: transfer ──
+  async function transferTokens() {
+    try {
+      if (!contract) { showResult("transferResult", "Connect wallet first!", true); return; }
+      const to = document.getElementById("transferTo").value;
+      const amount = document.getElementById("transferAmount").value;
+      const decimals = await contract.decimals();
+      const parsed = ethers.utils.parseUnits(amount, decimals);
+      const tx = await contract.transfer(to, parsed);
+      showResult("transferResult", "⏳ Dispatching... Hash:\n" + tx.hash);
+      await tx.wait();
+      showResult("transferResult", "Done!\nTX: " + tx.hash);
+    } catch (err) { showResult("transferResult", "Error: " + err.message, true); }
+  }
+
+  // ── UTILITY: Quick Mint ──
+  async function quickMint() {
+    try {
+      if (!contract) { showResult("quickMintResult", "Connect wallet first!", true); return; }
+      const to = document.getElementById("quickMintTo").value;
+      const amount = document.getElementById("quickMintAmount").value;
+      const decimals = await contract.decimals();
+      const parsed = ethers.utils.parseUnits(amount, decimals);
+      const tx = await contract.mint(to, parsed);
+      showResult("quickMintResult", "⏳ Minting Supply... Hash:\n" + tx.hash);
+      await tx.wait();
+      showResult("quickMintResult", "✨ Successfully Minted!\nTX: " + tx.hash);
+    } catch (err) { showResult("quickMintResult", "Error: " + err.message, true); }
+  }
+
+  // ── UTILITY: Quick Burn ──
+  async function quickBurn() {
+    try {
+      if (!contract) { showResult("quickBurnResult", "Connect wallet first!", true); return; }
+      const amount = document.getElementById("quickBurnAmount").value;
+      const decimals = await contract.decimals();
+      const parsed = ethers.utils.parseUnits(amount, decimals);
+      const tx = await contract.burn(parsed);
+      showResult("quickBurnResult", "⏳ Burning Supply... Hash:\n" + tx.hash);
+      await tx.wait();
+      showResult("quickBurnResult", "🔥 Deflationary Burn Confirmed!\nTX: " + tx.hash);
+    } catch (err) { showResult("quickBurnResult", "Error: " + err.message, true); }
+  }
+
+  // ── PIPELINE: Approve Spender ──
+  async function pipeApprove() {
+    try {
+      if (!contract) { showResult("approveResult", "Connect wallet first!", true); return; }
+      const spender = document.getElementById("pipeSpenderApprove").value;
+      const amount  = document.getElementById("pipeAmountApprove").value;
+      const decimals = await contract.decimals();
+      const parsed  = ethers.utils.parseUnits(amount, decimals);
+      const tx = await contract.approve(spender, parsed);
+      showResult("approveResult", "⏳ Approving Spender... Hash:\n" + tx.hash);
+      await tx.wait();
+      showResult("approveResult", "✅ Authorization Set for Spender!\nTX: " + tx.hash);
+    } catch (err) { showResult("approveResult", "Error: " + err.message, true); }
+  }
+
+  // ── PIPELINE: TransferFrom ──
+  async function pipeTransferFrom() {
+    try {
+      if (!contract) { showResult("transferFromResult", "Connect wallet first!", true); return; }
+      const from   = document.getElementById("pipeOwnerTF").value;
+      const to     = document.getElementById("pipeRecipientTF").value;
+      const amount = document.getElementById("pipeAmountTF").value;
+      const decimals = await contract.decimals();
+      const parsed = ethers.utils.parseUnits(amount, decimals);
+      const tx = await contract.transferFrom(from, to, parsed);
+      showResult("transferFromResult", "⏳ Executing Route Pipeline... Hash:\n" + tx.hash);
+      await tx.wait();
+      showResult("transferFromResult", "✅ Mediated Route Transfer Complete!\nTX: " + tx.hash);
+    } catch (err) { showResult("transferFromResult", "Error: " + err.message, true); }
+  }
+
+  // ── OWNER: pause ──
+  async function pauseToken() {
+    try {
+      if (!contract) { showResult("pauseResult", "Connect wallet first!", true); return; }
+      const tx = await contract.pause();
+      await tx.wait();
+      showResult("pauseResult", "🚨 STATE FLIPPED: Operations are now PAUSED.");
+    } catch (err) { showResult("pauseResult", "Error: " + err.message, true); }
+  }
+
+  // ── OWNER: unpause ──
+  async function unpauseToken() {
+    try {
+      if (!contract) { showResult("pauseResult", "Connect wallet first!", true); return; }
+      const tx = await contract.unpause();
+      await tx.wait();
+      showResult("pauseResult", "🟢 STATE FLIPPED: Operations are now RUNNING.");
+    } catch (err) { showResult("pauseResult", "Error: " + err.message, true); }
+  }
+</script>
+</body>
+</html>
