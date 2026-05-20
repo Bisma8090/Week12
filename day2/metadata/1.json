@@ -1,0 +1,19 @@
+{
+    "name": "The Alchemist",
+    "description": "Inspired NFT collection for The Alchemist by Paulo Coelho.",
+    "image": "ipfs://bafkreiaxdmdmvxz5vn4eprjz5iyqagts32x47awmyomub7lfcnjgbwr5zy",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "Golden Desert Sunset"
+      },
+      {
+        "trait_type": "Character",
+        "value": "Shepherd Boy"
+      },
+      {
+        "trait_type": "Landmark",
+        "value": "Pyramids"
+      }
+    ]
+  }

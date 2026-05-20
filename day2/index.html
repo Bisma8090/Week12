@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFT Mint DApp</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f4ff;
+      --surface: #ffffff;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --purple: #6d28d9;
+      --purple-light: #7c3aed;
+      --pink: #db2777;
+      --cyan: #0891b2;
+      --text: #1e1b4b;
+      --muted: #64748b;
+      --success: #059669;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(109,40,217,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(219,39,119,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(8,145,178,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 20px 60px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .logo {
+      font-size: 2.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--purple-light), var(--pink), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: 8px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Wallet bar */
+    .wallet-bar {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 32px;
+      animation: fadeDown 0.7s 0.1s ease both;
+    }
+
+    #wallet-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: inherit;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    #wallet-btn:hover {
+      border-color: var(--purple-light);
+      color: var(--purple);
+      box-shadow: 0 0 20px rgba(109,40,217,0.12);
+    }
+    #wallet-btn.connected {
+      border-color: var(--success);
+      color: var(--success);
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+    }
+    #wallet-btn.connected .dot { background: var(--success); animation: pulse 2s infinite; }
+
+    /* Mint card */
+    .mint-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 480px;
+      margin: 0 auto 48px;
+      animation: fadeUp 0.7s 0.2s ease both;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(109,40,217,0.08), 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .mint-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--pink), var(--cyan));
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background: #f8f5ff;
+      border: 1.5px solid #ede9fe;
+      border-radius: 14px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--purple-light), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      margin-bottom: 24px;
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 6px;
+      background: #ede9fe;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--purple), var(--pink));
+      border-radius: 99px;
+      width: 0%;
+      transition: width 1s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* Quantity */
+    .qty-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .qty-label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .qty-control {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: #f8f5ff;
+      border: 1.5px solid #ede9fe;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .qty-btn {
+      width: 36px; height: 36px;
+      background: transparent;
+      border: none;
+      color: var(--purple);
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family: inherit;
+      font-weight: 700;
+    }
+    .qty-btn:hover { background: #ede9fe; }
+    #mint-qty {
+      width: 50px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: center;
+      font-family: inherit;
+      outline: none;
+    }
+
+    /* Mint button */
+    .mint-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      position: relative;
+      overflow: hidden;
+    }
+    .mint-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .mint-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,58,237,0.4); }
+    .mint-btn:hover::after { opacity: 0.05; }
+    .mint-btn:active { transform: translateY(0); }
+    .mint-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Status */
+    #status {
+      text-align: center;
+      font-size: 0.88rem;
+      color: var(--muted);
+      min-height: 24px;
+      margin-bottom: 32px;
+      animation: fadeUp 0.7s 0.3s ease both;
+      transition: color 0.3s;
+    }
+
+    /* Gallery section */
+    .gallery-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      animation: fadeUp 0.7s 0.4s ease both;
+    }
+    .gallery-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+    .gallery-btn {
+      padding: 8px 18px;
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .gallery-btn:hover { border-color: var(--purple-light); color: var(--purple); }
+
+    /* Grid */
+    #gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      animation: fadeUp 0.7s 0.5s ease both;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s, border-color 0.3s;
+      animation: cardIn 0.5s ease both;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 16px 40px rgba(109,40,217,0.15), 0 0 0 1.5px rgba(109,40,217,0.2);
+      border-color: rgba(109,40,217,0.3);
+    }
+    .card img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: #f8f5ff;
+      display: block;
+      transition: transform 0.4s;
+    }
+    .card:hover img { transform: scale(1.05); }
+    .card-info {
+      padding: 10px 12px 12px;
+    }
+    .card-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-id {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Modal */
+    #nft-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(6px);
+    }
+    .modal-box {
+      position: relative;
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 420px;
+      width: 90%;
+      max-height: 88vh;
+      overflow-y: auto;
+      z-index: 1;
+      animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.15);
+    }
+    .modal-box img {
+      width: 100%;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: #f8f5ff;
+    }
+    .modal-box h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .modal-close {
+      position: absolute;
+      top: 14px; right: 16px;
+      background: #f1f5f9;
+      border: 1.5px solid var(--border);
+      color: var(--muted);
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+      font-family: inherit;
+    }
+    .modal-close:hover { background: #e2e8f0; color: var(--text); }
+    .desc { color: var(--muted); font-size: 0.88rem; margin-bottom: 8px; line-height: 1.5; }
+    .token-id {
+      display: inline-block;
+      background: #f8f5ff;
+      border: 1.5px solid #ede9fe;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      color: var(--purple);
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+    .attrs-title { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .attrs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .attr {
+      background: #f8f5ff;
+      border: 1.5px solid #ede9fe;
+      border-radius: 10px;
+      padding: 10px 12px;
+      transition: border-color 0.2s;
+    }
+    .attr:hover { border-color: var(--purple-light); }
+    .trait { font-size: 0.65rem; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+    .val { font-size: 0.88rem; font-weight: 700; margin-top: 3px; color: var(--text); }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.85) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @media (max-width: 600px) {
+      #gallery { grid-template-columns: repeat(2, 1fr); }
+      .logo { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="url(#lg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px">
+          <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="50%" stop-color="#ec4899"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>NFT Mint DApp
+      </div>
+      <p class="tagline">Collect · Own · Trade</p>
+    </header>
+
+    <div class="wallet-bar">
+      <button id="wallet-btn" onclick="connectWallet()">
+        <span class="dot"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+        <span id="wallet-label">Connect Wallet</span>
+      </button>
+    </div>
+
+    <div class="mint-card">
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-label">Mint Price</div>
+          <div class="stat-value" id="mint-price">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Minted</div>
+          <div class="stat-value" id="supply-info">—</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Supply Progress</span>
+          <span id="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="qty-row">
+        <span class="qty-label">Quantity</span>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <input type="number" id="mint-qty" value="1" min="1" max="20" readonly />
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+
+      <button class="mint-btn" id="mint-btn" onclick="mintNFT()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Mint NFT
+      </button>
+    </div>
+
+    <p id="status"></p>
+
+    <div class="gallery-header">
+      <span class="gallery-title">My Collection</span>
+      <button class="gallery-btn" onclick="loadMyNFTs()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Load NFTs
+      </button>
+    </div>
+
+    <div id="gallery"></div>
+
+  </div>
+
+  <script>
+    const ethersLib = ethers;
+    const contractAddress = "0xF1fCe69247394b4Cbb25659A76E87B0297B6BdBE";
+    const abi = [
+      "function mint(uint256 quantity) payable",
+      "function tokenURI(uint256 tokenId) view returns(string)",
+      "function ownerOf(uint256 tokenId) view returns(address)",
+      "function totalMinted() view returns(uint256)",
+      "function maxSupply() view returns(uint256)",
+      "function revealed() view returns(bool)",
+      "function mintPrice() view returns(uint256)",
+      "function whitelistUser(address user) external",
+      "function whitelist(address) view returns(bool)",
+      "function tokenOfOwnerByIndex(address owner, uint256 index) view returns(uint256)",
+      "function balanceOf(address owner) view returns(uint256)"
+    ];
+
+    let provider, signer, contract, userAddress;
+
+    const GATEWAYS = [
+      "https://ipfs.io/ipfs/",
+      "https://gateway.pinata.cloud/ipfs/",
+      "https://dweb.link/ipfs/",
+    ];
+
+    function ipfsToHttp(url, gi = 0) {
+      if (!url || !url.startsWith("ipfs://")) return url;
+      return GATEWAYS[gi] + url.replace("ipfs://", "");
+    }
+
+    function loadImageWithFallback(imgEl, ipfsUrl, tokenId, gi = 0) {
+      if (gi >= GATEWAYS.length) {
+        imgEl.src = `https://placehold.co/400x400/111827/64748b?text=NFT+%23${tokenId}`;
+        return;
+      }
+      imgEl.src = ipfsToHttp(ipfsUrl, gi);
+      imgEl.onerror = () => loadImageWithFallback(imgEl, ipfsUrl, tokenId, gi + 1);
+    }
+
+    function changeQty(delta) {
+      const input = document.getElementById("mint-qty");
+      const val = Math.min(20, Math.max(1, parseInt(input.value) + delta));
+      input.value = val;
+    }
+
+    function setStatus(msg, color = "#64748b") {
+      const el = document.getElementById("status");
+      el.style.color = color;
+      el.innerHTML = msg;
+    }
+
+    async function loadMintInfo() {
+      try {
+        const price = await contract.mintPrice();
+        const minted = await contract.totalMinted();
+        const max = await contract.maxSupply();
+        const mintedNum = minted.toNumber();
+        const maxNum = max.toNumber();
+        const pct = Math.round((mintedNum / maxNum) * 100);
+
+        document.getElementById("mint-price").innerText = price.eq(0) ? "Free" : ethersLib.utils.formatEther(price) + " ETH";
+        document.getElementById("supply-info").innerText = `${mintedNum} / ${maxNum}`;
+        document.getElementById("progress-fill").style.width = pct + "%";
+        document.getElementById("progress-pct").innerText = pct + "%";
+      } catch(e) { console.log("mint info error", e); }
+    }
+
+    async function connectWallet() {
+      if (!window.ethereum) { alert("Please install MetaMask first!"); return; }
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      provider = new ethersLib.providers.Web3Provider(window.ethereum, "any");
+      signer = provider.getSigner();
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      userAddress = accounts[0].toLowerCase();
+      contract = new ethersLib.Contract(contractAddress, abi, signer);
+
+      const btn = document.getElementById("wallet-btn");
+      btn.classList.add("connected");
+      document.getElementById("wallet-label").innerText = `${userAddress.slice(0,6)}...${userAddress.slice(-4)}`;
+
+      const isRevealed = await contract.revealed();
+      if (!isRevealed) setStatus("NFTs have not been revealed yet", "#f59e0b");
+      else setStatus("Wallet connected successfully", "#10b981");
+
+      await loadMintInfo();
+    }
+
+    async function mintNFT() {
+      try {
+        if (!contract) await connectWallet();
+
+        const isWhitelisted = await contract.whitelist(userAddress);
+        if (!isWhitelisted) {
+          setStatus("You are not whitelisted. Ask the owner to call whitelistUser().", "#ef4444");
+          return;
+        }
+
+        const qty = parseInt(document.getElementById("mint-qty").value) || 1;
+        const price = await contract.mintPrice();
+        const totalCost = price.mul(qty);
+
+        const btn = document.getElementById("mint-btn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Minting...`;
+        setStatus("Waiting for transaction confirmation...", "#a855f7");
+
+        const tx = await contract.mint(qty, { value: totalCost });
+        await tx.wait();
+
+        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Mint NFT`;
+        setStatus(`${qty} NFT(s) successfully minted!`, "#10b981");
+        await loadMintInfo();
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("mint-btn").disabled = false;
+        document.getElementById("mint-btn").innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Mint NFT`;
+        setStatus("❌ " + (err?.reason || err?.message || "Unknown error"), "#ef4444");
+      }
+    }
+
+    async function loadMyNFTs() {
+      if (!contract) { await connectWallet(); if (!contract) return; }
+
+      const gallery = document.getElementById("gallery");
+      gallery.innerHTML = "";
+      setStatus("Loading your NFTs...", "#a855f7");
+
+      try {
+        const balance = await contract.balanceOf(userAddress);
+        const balanceNum = balance.toNumber();
+
+        if (balanceNum === 0) {
+          setStatus("You don't own any NFTs yet.", "#64748b");
+          return;
+        }
+
+        for (let i = 0; i < balanceNum; i++) {
+          try {
+            const tokenId = await contract.tokenOfOwnerByIndex(userAddress, i);
+            const uri = await contract.tokenURI(tokenId);
+            const url = ipfsToHttp(uri);
+            const res = await fetch(url);
+            const metadata = await res.json();
+            const card = createCard(metadata, tokenId.toNumber());
+            card.style.animationDelay = (i * 0.08) + "s";
+            gallery.appendChild(card);
+          } catch(e) { console.log(`Token ${i} skip:`, e.message); }
+        }
+
+        setStatus(`${balanceNum} NFT(s) loaded`, "#10b981");
+
+      } catch (err) {
+        setStatus("Failed to load NFTs: " + (err?.reason || err?.message), "#ef4444");
+      }
+    }
+
+    function createCard(metadata, tokenId) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <img id="card-img-${tokenId}" alt="${metadata.name || 'NFT #' + tokenId}" />
+        <div class="card-info">
+          <div class="card-name">${metadata.name || "NFT #" + tokenId}</div>
+          <div class="card-id">#${tokenId}</div>
+        </div>
+      `;
+      card.addEventListener("click", () => showModal(metadata, tokenId));
+      setTimeout(() => {
+        const img = document.getElementById(`card-img-${tokenId}`);
+        if (img) loadImageWithFallback(img, metadata.image, tokenId);
+      }, 0);
+      return card;
+    }
+
+    function showModal(metadata, tokenId) {
+      const existing = document.getElementById("nft-modal");
+      if (existing) existing.remove();
+
+      const attrs = (metadata.attributes || [])
+        .map(a => `<div class="attr"><span class="trait">${a.trait_type}</span><span class="val">${a.value}</span></div>`)
+        .join("");
+
+      const modal = document.createElement("div");
+      modal.id = "nft-modal";
+      modal.innerHTML = `
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-box">
+          <button class="modal-close" onclick="closeModal()">✕</button>
+          <img id="modal-img-${tokenId}" alt="${metadata.name}" />
+          <h2>${metadata.name || "NFT #" + tokenId}</h2>
+          <p class="desc">${metadata.description || ""}</p>
+          <span class="token-id">Token ID: #${tokenId}</span>
+          ${attrs ? `<div class="attrs-title">Attributes</div><div class="attrs-grid">${attrs}</div>` : ""}
+        </div>
+      `;
+      document.body.appendChild(modal);
+      const img = document.getElementById(`modal-img-${tokenId}`);
+      loadImageWithFallback(img, metadata.image, tokenId);
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("nft-modal");
+      if (modal) modal.remove();
+    }
+
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+  </script>
+</body>
+</html>

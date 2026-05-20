@@ -1,0 +1,19 @@
+{
+    "name": "The Book Thief",
+    "description": "Inspired NFT collection for The Book Thief by Markus Zusak.",
+    "image": "ipfs://bafkreibh4xrvympqfjptqnj3auc73cppeitcr5nhxaztcthiegy7k43zxe",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "Snowy Street with Nazi Flag"
+      },
+      {
+        "trait_type": "Character",
+        "value": "Liesel Meminger"
+      },
+      {
+        "trait_type": "Item",
+        "value": "Books and Flying Pages"
+      }
+    ]
+  }

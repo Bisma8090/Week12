@@ -1,0 +1,15 @@
+{
+    "name": "And the Mountains Echoed",
+    "description": "Inspired NFT collection for And the Mountains Echoed by Khaled Hosseini.",
+    "image": "ipfs://bafkreiepmus56p2xbnipot7kfulaau3uw7shcppnfowrvkec4epvlk47ri",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "Mountain Valley Sunrise"
+      },
+      {
+        "trait_type": "Character",
+        "value": "Boy and Girl"
+      }
+    ]
+  }

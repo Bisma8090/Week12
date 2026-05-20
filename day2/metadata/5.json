@@ -1,0 +1,15 @@
+{
+    "name": "A Thousand Splendid Suns",
+    "description": "Inspired NFT collection for A Thousand Splendid Suns by Khaled Hosseini.",
+    "image": "ipfs://bafkreib2d6nftbzbrxezll4xwkioxphmgjiutirnhafp25eyzjhscljvb4",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "Old City View with Minaret"
+      },
+      {
+        "trait_type": "Character",
+        "value": "Two Women in Hijab"
+      }
+    ]
+  }

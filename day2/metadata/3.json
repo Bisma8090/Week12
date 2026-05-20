@@ -1,0 +1,19 @@
+{
+    "name": "The Kite Runner",
+    "description": "Inspired NFT collection for The Kite Runner by Khaled Hosseini.",
+    "image": "ipfs://bafkreiarjpjlhq6nsjjupvmpkftusxi4i2zgqacfwrh3izwwdhyi32e44i",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "Kabul Cityscape at Sunset"
+      },
+      {
+        "trait_type": "Character",
+        "value": "Kite Running Boy"
+      },
+      {
+        "trait_type": "Item",
+        "value": "Kites in Sky"
+      }
+    ]
+  }
