@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract MyNFT is ERC721Enumerable, Ownable, ERC2981 {
 
-    uint256 public mintPrice = 0;
-    uint256 public maxSupply = 20;
+    uint256 public mintPrice = 0.01 ether;
+    uint256 public maxSupply = 9;
     uint256 public totalMinted;
 
     string private baseTokenURI;

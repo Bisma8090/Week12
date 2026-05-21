@@ -1,0 +1,19 @@
+{
+    "name": "Udas Naslein",
+    "description": "Inspired NFT collection for Udas Naslein by Abdullah Hussain.",
+    "image": "ipfs://bafkreid64vxibjbch2oomouzhtpxmv3bz332ijchvzick46b4f5k725uxe",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "Barren Melancholic Landscape under Overcast Sky"
+      },
+      {
+        "trait_type": "Landscape Feature",
+        "value": "Leafless Autumn Tree"
+      },
+      {
+        "trait_type": "Item",
+        "value": "Udas Naslein Calligraphic Book"
+      }
+    ]
+  }

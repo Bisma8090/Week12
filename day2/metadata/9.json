@@ -1,0 +1,19 @@
+{
+    "name": "The Forty Rules of Love",
+    "description": "Inspired NFT collection for The Forty Rules of Love by Elif Shafak.",
+    "image": "ipfs://bafkreidcts4nj5natx4psa32x66qjhu4tg4pymw7fiqwhlyxft5gawvzfq",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "Ancient Lit Library in Konya"
+      },
+      {
+        "trait_type": "Character",
+        "value": "Whirling Dervish"
+      },
+      {
+        "trait_type": "Item",
+        "value": "Floating Manuscripts and Open Calligraphy Book"
+      }
+    ]
+  }

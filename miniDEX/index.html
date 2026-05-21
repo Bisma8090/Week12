@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeFi Mini-DEX Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --green: #10b981;
+            --pink: #ec4899;
+            --bg: #f8faff;
+            --surface: #ffffff;
+            --border: #e8ecf4;
+            --text: #0f172a;
+            --muted: #64748b;
+            --subtle: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── TOP NAV ── */
+        .topnav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 10px; }
+        .nav-brand .brand-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+        }
+        .nav-brand .brand-name { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+        .nav-brand .brand-name span { color: var(--primary); }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-badge {
+            background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;
+            border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .nav-badge::before {
+            content: ''; width: 6px; height: 6px; background: #22c55e;
+            border-radius: 50%; animation: blink 2s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        #connectBtn {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white; border: none; border-radius: 10px;
+            padding: 9px 18px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.25s ease;
+            box-shadow: 0 3px 12px rgba(99,102,241,0.3);
+            font-family: 'Inter', sans-serif;
+        }
+        #connectBtn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
+        #connectBtn.btn-connected {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            box-shadow: 0 3px 12px rgba(16,185,129,0.3) !important;
+        }
+
+        /* ── HERO BANNER ── */
+        .hero {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            padding: 48px 32px 80px;
+            position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .hero-orb1, .hero-orb2 {
+            position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.3;
+        }
+        .hero-orb1 { width: 300px; height: 300px; background: #c4b5fd; top: -80px; right: 10%; }
+        .hero-orb2 { width: 200px; height: 200px; background: #67e8f9; bottom: -60px; left: 5%; }
+        .hero-content { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; }
+        .hero h1 { font-size: 42px; font-weight: 800; color: white; letter-spacing: -1px; line-height: 1.1; }
+        .hero h1 span { color: #fde68a; }
+        .hero p { color: rgba(255,255,255,0.75); font-size: 16px; margin-top: 10px; font-weight: 400; }
+        .hero-stats {
+            display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap;
+        }
+        .hero-stat { color: white; }
+        .hero-stat .hs-val { font-size: 24px; font-weight: 800; }
+        .hero-stat .hs-label { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500; margin-top: 2px; }
+
+        /* ── MAIN LAYOUT ── */
+        .main-wrap {
+            max-width: 1100px; margin: -36px auto 0;
+            padding: 0 24px 60px;
+            position: relative; z-index: 2;
+        }
+
+        /* ── GRID ── */
+        .grid-top {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .grid-bottom {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.09); }
+
+        /* stat mini cards */
+        .stat-card { text-align: center; }
+        .stat-card .sc-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; margin: 0 auto 12px;
+        }
+        .sc-purple { background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
+        .sc-green  { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+        .sc-blue   { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+        .stat-card .sc-val { font-size: 22px; font-weight: 800; color: var(--text); }
+        .stat-card .sc-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 4px; }
+        .stat-card .sc-sub { font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 6px; background: #eef2ff; border-radius: 6px; padding: 2px 8px; display: inline-block; }
+
+        /* pool card */
+        .pool-card .card-title {
+            font-size: 14px; font-weight: 700; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .pool-card .card-title::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+        .reserve-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px; border-radius: 12px; margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+        .reserve-row:hover { background: var(--subtle); }
+        .rr-left { display: flex; align-items: center; gap: 10px; }
+        .token-dot {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800; color: white;
+        }
+        .dot-a { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+        .dot-b { background: linear-gradient(135deg, #10b981, #059669); }
+        .rr-name { font-size: 13px; font-weight: 600; color: var(--text); }
+        .rr-ticker { font-size: 11px; color: var(--muted); }
+        .rr-val { font-size: 16px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+
+        .rate-pill {
+            display: flex; align-items: center; justify-content: space-between;
+            background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+            border: 1px solid #e0e7ff; border-radius: 12px;
+            padding: 12px 16px; margin-top: 4px;
+        }
+        .rate-pill .rp-label { font-size: 12px; color: #6366f1; font-weight: 600; }
+        .rate-pill .rp-val { font-size: 15px; font-weight: 800; color: #4f46e5; }
+
+        /* swap cards */
+        .swap-card .card-title { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+        .swap-card .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        .swap-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .swap-tokens {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .tk-chip {
+            padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 700;
+        }
+        .tk-a { background: #ede9fe; color: #6d28d9; }
+        .tk-b { background: #d1fae5; color: #065f46; }
+        .tk-arrow { font-size: 16px; color: var(--muted); }
+
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .input-group { position: relative; margin-bottom: 12px; }
+        .input-group input {
+            width: 100%; padding: 14px 70px 14px 16px;
+            border: 1.5px solid var(--border); border-radius: 12px;
+            font-size: 18px; font-weight: 600; color: var(--text);
+            background: var(--subtle); font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            -moz-appearance: textfield;
+        }
+        .input-group input::-webkit-inner-spin-button,
+        .input-group input::-webkit-outer-spin-button { -webkit-appearance: none; }
+        .input-group input:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+        .input-group input::placeholder { color: #cbd5e1; font-weight: 400; }
+        .input-tag {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px;
+            pointer-events: none;
+        }
+        .tag-a { background: #ede9fe; color: #6d28d9; }
+        .tag-b { background: #d1fae5; color: #065f46; }
+
+        .preview-box {
+            display: flex; align-items: center; gap: 8px;
+            background: #f8fafc; border: 1px solid var(--border);
+            border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+            font-size: 13px; font-weight: 500; color: var(--muted);
+            min-height: 40px; transition: all 0.3s ease;
+        }
+        .preview-box .pb-icon { font-size: 14px; }
+        .preview-box .pb-val { font-weight: 700; color: var(--primary); }
+
+        .swap-btn {
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            font-family: 'Inter', sans-serif; letter-spacing: 0.2px;
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+            position: relative; overflow: hidden;
+        }
+        .swap-btn::after {
+            content: ''; position: absolute; inset: 0;
+            background: rgba(255,255,255,0.12);
+            transform: translateX(-100%); transition: transform 0.35s ease;
+        }
+        .swap-btn:hover::after { transform: translateX(0); }
+        .swap-btn:hover { transform: translateY(-2px); }
+        .swap-btn:active { transform: translateY(0); }
+        .swap-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .btn-a { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 4px 16px rgba(99,102,241,0.35); }
+        .btn-a:hover:not(:disabled) { box-shadow: 0 8px 24px rgba(99,102,241,0.45); }
+        .btn-b { background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 4px 16px rgba(16,185,129,0.35); }
+        .btn-b:hover:not(:disabled) { box-shadow: 0 8px 24px rgba(16,185,129,0.45); }
+
+        /* footer */
+        .footer { text-align: center; padding: 24px; font-size: 12px; color: #94a3b8; }
+        .footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .grid-top { grid-template-columns: 1fr; }
+            .grid-bottom { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 28px; }
+            .topnav { padding: 0 16px; }
+            .main-wrap { padding: 0 12px 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+    <div class="nav-brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-name">Mini<span>DEX</span></div>
+    </div>
+    <div class="nav-right">
+        <div class="nav-badge">Sepolia Testnet</div>
+        <button id="connectBtn">🦊 Connect Wallet</button>
+    </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+    <div class="hero-orb1"></div>
+    <div class="hero-orb2"></div>
+    <div class="hero-content">
+        <h1>Swap Tokens <span>Instantly</span><br>On-Chain</h1>
+        <p>Decentralized exchange powered by automated market making</p>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="hs-val">AMM</div>
+                <div class="hs-label">Protocol Type</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hs-val">0%</div>
+                <div class="hs-label">Slippage Control</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hs-val">2</div>
+                <div class="hs-label">Token Pairs</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-wrap">
+
+    <!-- TOP ROW: 3 stat cards -->
+    <div class="grid-top">
+        <div class="card stat-card">
+            <div class="sc-icon sc-purple">🪙</div>
+            <div class="sc-val"><span id="reserveA">—</span></div>
+            <div class="sc-label">ALPHA Reserve</div>
+            <div class="sc-sub">Token A</div>
+        </div>
+        <div class="card stat-card">
+            <div class="sc-icon sc-green">🪙</div>
+            <div class="sc-val"><span id="reserveB">—</span></div>
+            <div class="sc-label">BETA Reserve</div>
+            <div class="sc-sub">Token B</div>
+        </div>
+        <div class="card stat-card">
+            <div class="sc-icon sc-blue">📈</div>
+            <div class="sc-val"><span id="priceRate">—</span></div>
+            <div class="sc-label">Price Rate</div>
+            <div class="sc-sub">ALPHA / BETA</div>
+        </div>
+    </div>
+
+    <!-- BOTTOM ROW: pool info + 2 swap cards -->
+    <div class="grid-bottom">
+
+        <!-- Pool Card -->
+        <div class="card pool-card">
+            <div class="card-title">📊 Pool Reserves</div>
+            <div class="reserve-row">
+                <div class="rr-left">
+                    <div class="token-dot dot-a">A</div>
+                    <div>
+                        <div class="rr-name">ALPHA Token</div>
+                        <div class="rr-ticker">Token A · ERC-20</div>
+                    </div>
+                </div>
+                <div class="rr-val" id="reserveA2">0.00</div>
+            </div>
+            <div class="reserve-row">
+                <div class="rr-left">
+                    <div class="token-dot dot-b">B</div>
+                    <div>
+                        <div class="rr-name">BETA Token</div>
+                        <div class="rr-ticker">Token B · ERC-20</div>
+                    </div>
+                </div>
+                <div class="rr-val" id="reserveB2">0.00</div>
+            </div>
+            <div class="rate-pill">
+                <span class="rp-label">⚖️ Exchange Rate</span>
+                <span class="rp-val">1 ALPHA = <span id="priceRate2">0.0000</span> BETA</span>
+            </div>
+        </div>
+
+        <!-- Swap A → B -->
+        <div class="card swap-card">
+            <div class="card-title">🔄 Swap</div>
+            <div class="swap-tokens" style="margin-bottom:18px;">
+                <span class="tk-chip tk-a">ALPHA</span>
+                <span class="tk-arrow">→</span>
+                <span class="tk-chip tk-b">BETA</span>
+            </div>
+            <label for="swapAmountA">Amount to Sell</label>
+            <div class="input-group">
+                <input type="number" id="swapAmountA" placeholder="0.00" min="0">
+                <span class="input-tag tag-a">ALPHA</span>
+            </div>
+            <div class="preview-box">
+                <span class="pb-icon">⟳</span>
+                <span id="previewA">Estimated Output: 0.00 BETA</span>
+            </div>
+            <button id="swapBtnA" class="swap-btn btn-a">Swap ALPHA ➔ BETA</button>
+        </div>
+
+        <!-- Swap B → A -->
+        <div class="card swap-card">
+            <div class="card-title">🔄 Swap</div>
+            <div class="swap-tokens" style="margin-bottom:18px;">
+                <span class="tk-chip tk-b">BETA</span>
+                <span class="tk-arrow">→</span>
+                <span class="tk-chip tk-a">ALPHA</span>
+            </div>
+            <label for="swapAmountB">Amount to Sell</label>
+            <div class="input-group">
+                <input type="number" id="swapAmountB" placeholder="0.00" min="0">
+                <span class="input-tag tag-b">BETA</span>
+            </div>
+            <div class="preview-box">
+                <span class="pb-icon">⟳</span>
+                <span id="previewB">Estimated Output: 0.00 ALPHA</span>
+            </div>
+            <button id="swapBtnB" class="swap-btn btn-b">Swap BETA ➔ ALPHA</button>
+        </div>
+
+    </div>
+</div>
+
+<div class="footer">Built on <a href="#">Ethereum</a> · Powered by ethers.js · Sepolia Testnet</div>
+
+<script>
+    const TOKEN_A_ADDRESS = "0x88D72FBa183F16cEC24439d55683Ea3B862a8e6c"; 
+    const TOKEN_B_ADDRESS = "0xF539BE1dC34a29903f6A8e3B730a6E8876D136d2"; 
+    const SWAP_CONTRACT_ADDRESS = "0xda5C751b0a73b67159146Be184c1e1b3861feBB9"; 
+
+    const erc20ABI = [
+        "function approve(address spender, uint256 amount) external returns (bool)"
+    ];
+    const swapABI = [
+        "function getReserves() external view returns (uint256, uint256)",
+        "function swapAforB(uint256 amountAIn) external",
+        "function swapBforA(uint256 amountBIn) external",
+        "function getSwapAmount(uint256 amountIn, bool _swapAforB) external view returns (uint256)"
+    ];
+
+    let provider, signer, tokenAContract, tokenBContract, swapContract;
+
+    const connectBtn = document.getElementById("connectBtn");
+    const reserveAEl = document.getElementById("reserveA");
+    const reserveBEl = document.getElementById("reserveB");
+    const priceRateEl = document.getElementById("priceRate");
+    const reserveAEl2 = document.getElementById("reserveA2");
+    const reserveBEl2 = document.getElementById("reserveB2");
+    const priceRateEl2 = document.getElementById("priceRate2");
+
+    const swapAmountA = document.getElementById("swapAmountA");
+    const previewA = document.getElementById("previewA");
+    const swapBtnA = document.getElementById("swapBtnA");
+
+    const swapAmountB = document.getElementById("swapAmountB");
+    const previewB = document.getElementById("previewB");
+    const swapBtnB = document.getElementById("swapBtnB");
+
+    async function connectWallet() {
+        if (typeof window.ethereum !== "undefined") {
+            try {
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+
+                tokenAContract = new ethers.Contract(TOKEN_A_ADDRESS, erc20ABI, signer);
+                tokenBContract = new ethers.Contract(TOKEN_B_ADDRESS, erc20ABI, signer);
+                swapContract = new ethers.Contract(SWAP_CONTRACT_ADDRESS, swapABI, signer);
+
+                const userAddress = await signer.getAddress();
+                connectBtn.innerText = `✅ ${userAddress.substring(0,6)}...${userAddress.slice(-4)}`;
+                connectBtn.classList.add("btn-connected");
+
+                await updatePoolStats();
+                setupLiveListeners();
+            } catch (error) {
+                console.error("Wallet connection broken:", error);
+                alert("Connection failed.");
+            }
+        } else {
+            alert("Please install MetaMask to evaluate your dApp!");
+        }
+    }
+
+    async function updatePoolStats() {
+        if (!swapContract) return;
+        try {
+            const reserves = await swapContract.getReserves();
+            const reserveA = ethers.utils.formatEther(reserves[0]);
+            const reserveB = ethers.utils.formatEther(reserves[1]);
+            const fmt = (v) => parseFloat(v).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            reserveAEl.innerText = fmt(reserveA);
+            reserveBEl.innerText = fmt(reserveB);
+            reserveAEl2.innerText = fmt(reserveA);
+            reserveBEl2.innerText = fmt(reserveB);
+
+            if (parseFloat(reserveA) > 0) {
+                const rate = (parseFloat(reserveB) / parseFloat(reserveA)).toFixed(4);
+                priceRateEl.innerText = rate;
+                priceRateEl2.innerText = rate;
+            }
+        } catch (error) {
+            console.error("Failed to parse pool reserves:", error);
+        }
+    }
+
+    function setupLiveListeners() {
+        swapAmountA.addEventListener("input", async () => {
+            const val = swapAmountA.value;
+            if(!val || parseFloat(val) <= 0) { previewA.innerText = "Estimated Output: 0.00 BETA"; return; }
+            try {
+                const weiInput = ethers.utils.parseEther(val);
+                const outWei = await swapContract.getSwapAmount(weiInput, true);
+                previewA.innerText = `Estimated Output: ${ethers.utils.formatEther(outWei)} BETA`;
+            } catch(e) { previewA.innerText = "Error calculating output"; }
+        });
+
+        swapAmountB.addEventListener("input", async () => {
+            const val = swapAmountB.value;
+            if(!val || parseFloat(val) <= 0) { previewB.innerText = "Estimated Output: 0.00 ALPHA"; return; }
+            try {
+                const weiInput = ethers.utils.parseEther(val);
+                const outWei = await swapContract.getSwapAmount(weiInput, false);
+                previewB.innerText = `Estimated Output: ${ethers.utils.formatEther(outWei)} ALPHA`;
+            } catch(e) { previewB.innerText = "Error calculating output"; }
+        });
+    }
+
+    async function executeSwapA() {
+        const amountStr = swapAmountA.value;
+        if (!amountStr || parseFloat(amountStr) <= 0) return alert("Enter an amount first.");
+        try {
+            swapBtnA.disabled = true;
+            const amountWei = ethers.utils.parseEther(amountStr);
+            swapBtnA.innerText = "Step 1/2: Approving ALPHA...";
+            const txApprove = await tokenAContract.approve(SWAP_CONTRACT_ADDRESS, amountWei);
+            try {
+                await txApprove.wait();
+            } catch (error) {
+                if (error.code === 'TRANSACTION_REPLACED' && error.cancelled === false) {
+                    console.log("Transaction was repriced but successful!");
+                } else { throw error; }
+            }
+            swapBtnA.innerText = "Step 2/2: Swapping Assets...";
+            const txSwap = await swapContract.swapAforB(amountWei);
+            await txSwap.wait();
+            alert("Swap successful! Check your new BETA balance.");
+            swapAmountA.value = "";
+            previewA.innerText = "Estimated Output: 0.00 BETA";
+            await updatePoolStats();
+        } catch (error) {
+            console.error(error);
+            alert("Transaction failed.");
+        } finally {
+            swapBtnA.disabled = false;
+            swapBtnA.innerText = "Swap ALPHA ➔ BETA";
+        }
+    }
+
+    async function executeSwapB() {
+        const amountStr = swapAmountB.value;
+        if (!amountStr || parseFloat(amountStr) <= 0) return alert("Enter an amount first.");
+        try {
+            swapBtnB.disabled = true;
+            const amountWei = ethers.utils.parseEther(amountStr);
+            swapBtnB.innerText = "Step 1/2: Approving BETA...";
+            const txApprove = await tokenBContract.approve(SWAP_CONTRACT_ADDRESS, amountWei);
+            await txApprove.wait();
+            swapBtnB.innerText = "Step 2/2: Swapping Assets...";
+            const txSwap = await swapContract.swapBforA(amountWei);
+            await txSwap.wait();
+            alert("Swap successful! Check your new ALPHA balance.");
+            swapAmountB.value = "";
+            previewB.innerText = "Estimated Output: 0.00 ALPHA";
+            await updatePoolStats();
+        } catch (error) {
+            console.error(error);
+            alert("Transaction failed.");
+        } finally {
+            swapBtnB.disabled = false;
+            swapBtnB.innerText = "Swap BETA ➔ ALPHA";
+        }
+    }
+
+    connectBtn.addEventListener("click", connectWallet);
+    swapBtnA.addEventListener("click", executeSwapA);
+    swapBtnB.addEventListener("click", executeSwapB);
+</script>
+</body>
+</html>

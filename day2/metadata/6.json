@@ -1,0 +1,19 @@
+{
+    "name": "A Little Life",
+    "description": "Inspired NFT collection for A Little Life by Hanya Yanagihara.",
+    "image": "ipfs://bafkreiausrm66eurkd3ljydhu2en5utikmitwpdjaqa5fsgbag5cwhinbi",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "NYC Art Studio with City View"
+      },
+      {
+        "trait_type": "Character",
+        "value": "JB (Jean-Baptiste)"
+      },
+      {
+        "trait_type": "Subject",
+        "value": "The Lispenard Street Series Canvas"
+      }
+    ]
+  }

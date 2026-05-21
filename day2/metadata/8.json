@@ -1,0 +1,19 @@
+{
+    "name": "Raja Gidh",
+    "description": "Inspired NFT collection for Raja Gidh by Bano Qudsia.",
+    "image": "ipfs://bafkreidbpmnpsjpid7hiryozb5raifqmbzqhdgayb5g72facnb6darimeq",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "Historic Sufi Shrine of Lahore at Dawn"
+      },
+      {
+        "trait_type": "Character",
+        "value": "Solitary Seeker in Traditional Attire"
+      },
+      {
+        "trait_type": "Atmosphere",
+        "value": "Morning Mist and Flying Pigeons"
+      }
+    ]
+  }
