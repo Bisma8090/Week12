@@ -43,7 +43,6 @@ contract SimpleSwap {
     function swapAforB(uint256 amountAIn) external {
         require(amountAIn > 0, "Amount must be greater than 0");
         require(reserveB > 0, "No liquidity");
-        require(tokenA.balanceOf(msg.sender) >= amountAIn, "Insufficient Token A balance");
         
         // Calculate how much Token B user gets
         // Formula: amountOut = (reserveB * amountIn) / (reserveA + amountIn)
@@ -67,7 +66,6 @@ contract SimpleSwap {
     function swapBforA(uint256 amountBIn) external {
         require(amountBIn > 0, "Amount must be greater than 0");
         require(reserveA > 0, "No liquidity");
-        require(tokenB.balanceOf(msg.sender) >= amountBIn, "Insufficient Token B balance");
         
         // Calculate how much Token A user gets
         uint256 amountAOut = (reserveA * amountBIn) / (reserveB + amountBIn);

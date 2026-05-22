@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlatformCoin — Unified DeFi + NFT Ecosystem</title>
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6366f1;--pl:#818cf8;--g:#10b981;--o:#f59e0b;--pk:#ec4899;--b:#3b82f6;
+  --bg:#eef0ff;--sur:#fff;--bdr:#e2e8f0;--txt:#0f172a;--mut:#64748b;--sub:#f8fafc;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--bdr);padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-ico{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;font-size:18px}
+.brand-name{font-size:17px;font-weight:800;letter-spacing:-.5px}.brand-name span{color:var(--p)}
+.nav-r{display:flex;align-items:center;gap:10px}
+.badge{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:20px;
+  padding:4px 12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.badge::before{content:'';width:6px;height:6px;background:#22c55e;border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#connBtn{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;
+  padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+#connBtn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.4)}
+#connBtn.ok{background:linear-gradient(135deg,#10b981,#059669)!important}
+/* TABS */
+.tabs{display:flex;gap:4px;padding:20px 28px 0;max-width:1140px;margin:0 auto}
+.tab{padding:10px 22px;border-radius:10px 10px 0 0;font-size:14px;font-weight:600;cursor:pointer;
+  border:1px solid transparent;border-bottom:none;color:var(--mut);background:transparent;
+  transition:all .2s;font-family:'Inter',sans-serif}
+.tab.on{background:var(--sur);border-color:var(--bdr);color:var(--p)}
+/* PAGES */
+.pg{display:none;max-width:1140px;margin:0 auto;padding:0 28px 60px}
+.pg.on{display:block}
+.pg-inner{background:var(--sur);border:1px solid var(--bdr);border-radius:0 16px 16px 16px;
+  padding:28px;box-shadow:0 2px 16px rgba(0,0,0,.05)}
+/* CARD */
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:16px;padding:22px;
+  box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.ctitle{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;
+  margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.ctitle::after{content:'';flex:1;height:1px;background:var(--bdr)}
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+/* FORM */
+label{display:block;font-size:11px;font-weight:700;color:var(--mut);margin-bottom:5px;
+  text-transform:uppercase;letter-spacing:.5px}
+.iw{position:relative;margin-bottom:14px}
+.iw input,.iw select{width:100%;padding:13px 72px 13px 14px;border:1.5px solid var(--bdr);
+  border-radius:12px;font-size:16px;font-weight:600;color:var(--txt);background:var(--sub);
+  font-family:'Inter',sans-serif;transition:all .2s;-moz-appearance:textfield}
+.iw input::-webkit-inner-spin-button{-webkit-appearance:none}
+.iw input:focus,.iw select:focus{outline:none;border-color:var(--p);background:#fff;
+  box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.iw select{padding-right:14px;cursor:pointer}
+.itag{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;
+  font-weight:700;padding:3px 8px;border-radius:6px;pointer-events:none}
+.tp{background:#ede9fe;color:#6d28d9}.tt{background:#d1fae5;color:#065f46}
+.tb{background:#fef3c7;color:#92400e}
+/* BUTTONS */
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;
+  cursor:pointer;font-family:'Inter',sans-serif;transition:all .25s}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn:hover:not(:disabled){transform:translateY(-2px)}
+.bp{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 16px rgba(99,102,241,.35)}
+.bg{background:linear-gradient(135deg,#10b981,#059669);color:#fff;box-shadow:0 4px 16px rgba(16,185,129,.35)}
+.bo{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;box-shadow:0 4px 16px rgba(245,158,11,.35)}
+.bpk{background:linear-gradient(135deg,#ec4899,#db2777);color:#fff;box-shadow:0 4px 16px rgba(236,72,153,.35)}
+.bsm{padding:8px 16px;font-size:12px;width:auto;border-radius:8px}
+/* PREVIEW */
+.prev{display:flex;align-items:center;gap:8px;background:var(--sub);border:1px solid var(--bdr);
+  border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--mut);min-height:40px}
+.prev b{color:var(--p)}
+/* STAT ROW */
+.sr{display:flex;justify-content:space-between;align-items:center;padding:10px 0;
+  border-bottom:1px solid var(--bdr)}
+.sr:last-child{border-bottom:none}
+.sl{font-size:13px;color:var(--mut);font-weight:500}
+.sv{font-size:15px;font-weight:700}
+/* TIMER */
+.timer{text-align:center;padding:18px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);
+  border-radius:12px;margin-bottom:16px}
+.tv{font-size:34px;font-weight:800;color:var(--p);letter-spacing:3px;font-variant-numeric:tabular-nums}
+.tl{font-size:12px;color:var(--mut);margin-top:4px}
+/* NFT GRID */
+.nft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-top:16px}
+.nft-card{background:var(--sur);border:1.5px solid var(--bdr);border-radius:14px;overflow:hidden;
+  transition:all .25s;cursor:pointer}
+.nft-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.1);border-color:var(--p)}
+.nft-img{width:100%;aspect-ratio:1;object-fit:cover;background:linear-gradient(135deg,#ede9fe,#ddd6fe);
+  display:flex;align-items:center;justify-content:center;font-size:52px}
+.nft-info{padding:12px}
+.nft-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.nft-price{font-size:12px;color:var(--mut)}
+.nft-price b{color:var(--p)}
+/* PORTFOLIO */
+.bal-hero{background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:16px;padding:24px;
+  color:#fff;margin-bottom:16px}
+.bh-lbl{font-size:12px;opacity:.7;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.bh-val{font-size:38px;font-weight:800;margin-top:4px}
+.tbr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+  border-radius:12px;background:var(--sub);margin-bottom:10px}
+.tbr-l{display:flex;align-items:center;gap:12px}
+.ticon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff}
+.ip{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+.it{background:linear-gradient(135deg,#10b981,#059669)}
+.ib{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.tname{font-size:14px;font-weight:700}.tsym{font-size:12px;color:var(--mut)}
+.tbal{font-size:18px;font-weight:800}
+/* POOL TABLE */
+.ptbl{width:100%;border-collapse:collapse;margin-top:8px}
+.ptbl th{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;
+  padding:8px 12px;text-align:left;border-bottom:1px solid var(--bdr)}
+.ptbl td{padding:12px;font-size:14px;font-weight:600;border-bottom:1px solid var(--bdr)}
+.ptbl tr:last-child td{border-bottom:none}
+/* CHIP */
+.chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.cp{background:#ede9fe;color:#6d28d9}.ct{background:#d1fae5;color:#065f46}
+.cb{background:#fef3c7;color:#92400e}
+/* ALERT */
+.alert{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:14px;display:none}
+.alert.on{display:block}
+.as{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
+.ae{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.ai{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+/* SECTION */
+.stitle{font-size:22px;font-weight:800;margin-bottom:4px}
+.ssub{font-size:14px;color:var(--mut);margin-bottom:22px}
+@media(max-width:768px){.g2,.g3{grid-template-columns:1fr}.tabs{padding:14px 12px 0}
+  .pg{padding:0 12px 40px}nav{padding:0 14px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">
+    <div class="brand-ico">⚡</div>
+    <div class="brand-name">Platform<span>Coin</span></div>
+  </div>
+  <div class="nav-r">
+    <div class="badge">Sepolia Testnet</div>
+    <button id="connBtn" onclick="connectWallet()">🦊 Connect Wallet</button>
+  </div>
+</nav>
+
+<div class="tabs">
+  <button class="tab on"  onclick="showPage('faucet',this)"> Faucet</button>
+  <button class="tab"     onclick="showPage('dex',this)">🔄 DEX</button>
+  <button class="tab"     onclick="showPage('nft',this)">🖼️ NFT Market</button>
+  <button class="tab"     onclick="showPage('portfolio',this)">💼 Portfolio</button>
+</div>
+
+<!-- ══════════════════════════════════════ FAUCET -->
+<div id="pg-faucet" class="pg on">
+<div class="pg-inner">
+  <div class="stitle"> Token Faucet</div>
+  <div class="ssub">Claim 100 PLAT every 24 hours — your starting point for the ecosystem</div>
+  <div id="fa-alert" class="alert"></div>
+  <div class="g2">
+    <div>
+      <div class="timer">
+        <div class="tv" id="timerVal">--:--:--</div>
+        <div class="tl" id="timerLbl">Connect wallet to check cooldown</div>
+      </div>
+      <button class="btn bp" id="claimBtn" onclick="claimTokens()">💧 Claim 100 PLAT</button>
+    </div>
+    <div class="card">
+      <div class="ctitle">📊 Your Stats</div>
+      <div class="sr"><span class="sl">PLAT Balance</span><span class="sv" id="f-plat-bal">—</span></div>
+      <div class="sr"><span class="sl">Total Claimed</span><span class="sv" id="f-total-claimed">—</span></div>
+      <div class="sr"><span class="sl">Claim Amount</span><span class="sv">100 PLAT</span></div>
+      <div class="sr"><span class="sl">Cooldown Period</span><span class="sv">24 Hours</span></div>
+      <div class="sr"><span class="sl">Next Claim</span><span class="sv" id="f-next-claim">—</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════ DEX -->
+<div id="pg-dex" class="pg">
+<div class="pg-inner">
+  <div class="stitle">🔄 Multi-Token DEX</div>
+  <div class="ssub">Swap between PLAT, TUSD, and TBTC — 0.3% fee, AMM constant-product</div>
+  <div id="dex-alert" class="alert"></div>
+
+  <!-- Pool Reserves -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="ctitle">📊 Pool Reserves &amp; Prices</div>
+    <table class="ptbl">
+      <thead><tr><th>Pool</th><th>Reserve A</th><th>Reserve B</th><th>Price (A per B)</th><th>Your LP</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="chip cp">PLAT</span> / <span class="chip ct">TUSD</span></td>
+          <td id="p0ra">—</td><td id="p0rb">—</td><td id="p0pr">—</td><td id="p0lp">—</td>
+        </tr>
+        <tr>
+          <td><span class="chip cp">PLAT</span> / <span class="chip cb">TBTC</span></td>
+          <td id="p1ra">—</td><td id="p1rb">—</td><td id="p1pr">—</td><td id="p1lp">—</td>
+        </tr>
+        <tr>
+          <td><span class="chip ct">TUSD</span> / <span class="chip cb">TBTC</span></td>
+          <td id="p2ra">—</td><td id="p2rb">—</td><td id="p2pr">—</td><td id="p2lp">—</td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="btn bsm bp" style="margin-top:12px" onclick="loadPools()">🔄 Refresh Pools</button>
+  </div>
+
+  <div class="g2">
+    <!-- Swap -->
+    <div class="card">
+      <div class="ctitle">⚡ Swap Tokens</div>
+      <label>Direction</label>
+      <div class="iw">
+        <select id="swapDir" onchange="onSwapDirChange()">
+          <option value="0,plat,tusd">PLAT → TUSD</option>
+          <option value="0,tusd,plat">TUSD → PLAT</option>
+          <option value="1,plat,tbtc">PLAT → TBTC</option>
+          <option value="1,tbtc,plat">TBTC → PLAT</option>
+          <option value="2,tusd,tbtc">TUSD → TBTC</option>
+          <option value="2,tbtc,tusd">TBTC → TUSD</option>
+        </select>
+      </div>
+      <label>Amount In</label>
+      <div class="iw">
+        <input type="number" id="swapIn" placeholder="0.00" oninput="previewSwap()">
+        <span class="itag tp" id="swapInTag">PLAT</span>
+      </div>
+      <div style="font-size:11px;color:var(--mut);margin-top:-10px;margin-bottom:10px">
+        Balance: <span id="swapInBal" style="font-weight:700;color:var(--p)">—</span>
+      </div>
+      <div class="prev">⟳ <span id="swapPrev">Enter amount to preview</span></div>
+      <button class="btn bp" id="swapBtn" onclick="doSwap()">⚡ Swap</button>
+    </div>
+
+    <!-- Add / Remove Liquidity -->
+    <div class="card">
+      <div class="ctitle">💧 Liquidity</div>
+      <label>Pool</label>
+      <div class="iw">
+        <select id="liqPool" onchange="onLiqPoolChange()">
+          <option value="0">Pool 0 — PLAT / TUSD</option>
+          <option value="1">Pool 1 — PLAT / TBTC</option>
+          <option value="2">Pool 2 — TUSD / TBTC</option>
+        </select>
+      </div>
+      <label>Token A Amount</label>
+      <div class="iw">
+        <input type="number" id="liqA" placeholder="0.00">
+        <span class="itag tp" id="liqTagA">PLAT</span>
+      </div>
+      <label>Token B Amount</label>
+      <div class="iw">
+        <input type="number" id="liqB" placeholder="0.00">
+        <span class="itag tt" id="liqTagB">TUSD</span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn bo" style="flex:1" id="addLiqBtn" onclick="doAddLiquidity()">➕ Add</button>
+        <div style="flex:1">
+          <input type="number" id="rmShares" placeholder="Shares" style="width:100%;padding:13px 14px;border:1.5px solid var(--bdr);border-radius:12px;font-size:14px;font-weight:600;background:var(--sub);font-family:'Inter',sans-serif;margin-bottom:0">
+          <button class="btn" style="background:#ef4444;color:#fff;margin-top:8px" onclick="doRemoveLiquidity()">➖ Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════ NFT MARKET -->
+<div id="pg-nft" class="pg">
+<div class="pg-inner">
+  <div class="stitle">🖼️ NFT Marketplace</div>
+  <div class="ssub">Buy PlatformNFTs with PLAT, TUSD, or TBTC — prices auto-calculated from DEX</div>
+  <div id="nft-alert" class="alert"></div>
+
+  <div class="g3" style="margin-bottom:20px">
+    <div class="card">
+      <div class="ctitle">💰 NFT Price</div>
+      <div class="sr"><span class="sl">In PLAT</span><span class="sv" id="np-plat">—</span></div>
+      <div class="sr"><span class="sl">In TUSD</span><span class="sv" id="np-tusd">—</span></div>
+      <div class="sr"><span class="sl">In TBTC</span><span class="sv" id="np-tbtc">—</span></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">📦 Availability</div>
+      <div class="sr"><span class="sl">Available (Primary)</span><span class="sv" id="nft-avail">—</span></div>
+      <div class="sr"><span class="sl">Total Minted</span><span class="sv" id="nft-minted">—</span></div>
+      <div class="sr"><span class="sl">Max Supply</span><span class="sv">20</span></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">🛒 Buy NFT</div>
+      <label>Pay With</label>
+      <div class="iw">
+        <select id="nftPayTok" onchange="updateNftPreview()">
+          <option value="plat">PLAT</option>
+          <option value="tusd">TUSD</option>
+          <option value="tbtc">TBTC</option>
+        </select>
+      </div>
+      <div class="prev">💡 <span id="nftBuyPrev">Select token to see price</span></div>
+      <button class="btn bpk" id="buyNftBtn" onclick="doBuyNFT()">🛒 Buy NFT</button>
+    </div>
+  </div>
+
+  <!-- Secondary Market -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="ctitle">🏪 Secondary Market — List Your NFT</div>
+    <div class="g2">
+      <div>
+        <label>Token ID to List</label>
+        <div class="iw"><input type="number" id="listTokenId" placeholder="e.g. 1"></div>
+        <label>Price in PLAT</label>
+        <div class="iw"><input type="number" id="listPrice" placeholder="e.g. 150"></div>
+        <button class="btn bo" onclick="doListNFT()">📋 List for Sale</button>
+      </div>
+      <div>
+        <label>Token ID to Buy (Secondary)</label>
+        <div class="iw"><input type="number" id="buySecId" placeholder="e.g. 1"></div>
+        <div class="prev" id="secPrev">💡 Enter token ID to see listing price</div>
+        <button class="btn bg" onclick="doBuyListed()">🤝 Buy Listed NFT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span style="font-size:13px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.8px">🖼️ All Minted NFTs</span>
+    <button class="btn bsm bp" onclick="loadNFTs()">🔄 Load Gallery</button>
+  </div>
+  <div class="nft-grid" id="nftGallery">
+    <div style="color:var(--mut);font-size:14px;padding:20px;grid-column:1/-1">Click "Load Gallery" to see minted NFTs</div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════ PORTFOLIO -->
+<div id="pg-portfolio" class="pg">
+<div class="pg-inner">
+  <div class="stitle">💼 Portfolio</div>
+  <div class="ssub">All your token balances and NFT collection in one place</div>
+
+  <div class="bal-hero">
+    <div class="bh-lbl">PLAT Balance</div>
+    <div class="bh-val" id="port-plat-big">— PLAT</div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="ctitle">🪙 Token Balances</div>
+    <div class="tbr">
+      <div class="tbr-l">
+        <div class="ticon ip">P</div>
+        <div><div class="tname">PlatformCoin</div><div class="tsym">PLAT</div></div>
+      </div>
+      <div class="tbal" id="port-plat">—</div>
+    </div>
+    <div class="tbr">
+      <div class="tbr-l">
+        <div class="ticon it">T</div>
+        <div><div class="tname">TestUSD</div><div class="tsym">TUSD</div></div>
+      </div>
+      <div class="tbal" id="port-tusd">—</div>
+    </div>
+    <div class="tbr">
+      <div class="tbr-l">
+        <div class="ticon ib">B</div>
+        <div><div class="tname">TestBTC</div><div class="tsym">TBTC</div></div>
+      </div>
+      <div class="tbal" id="port-tbtc">—</div>
+    </div>
+    <button class="btn bsm bp" style="margin-top:8px" onclick="loadPortfolio()">🔄 Refresh Balances</button>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🖼️ My NFTs</div>
+    <div class="nft-grid" id="myNfts">
+      <div style="color:var(--mut);font-size:14px;padding:20px;grid-column:1/-1">Connect wallet and refresh to see your NFTs</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTRACT ADDRESSES — update these after deploying to Sepolia
+// ══════════════════════════════════════════════════════════════════════════════
+const ADDR = {
+  PLAT:        "0x27e03BBaE3cbad20600924a33b6e141b94F27b55", // PlatformToken
+  TUSD:        "0x576D81e8eA1f7cAF5a788E770c0770A5a1BC955e", // TestUSD
+  TBTC:        "0x6A089C1fDDfF7ed04047779bD216FEDA95e8522F", // TestBTC
+  FAUCET:      "0xF9F98664B8724d7BB6032Af4F004Af569c054E52", // TokenFaucet
+  DEX:         "0x3fF446f13Ec78255c3f40bF8a3757474208ef541", // MultiTokenDEX
+  NFT_COL:     "0x747cbD506Eb3DB5D135C4a2eaEE34f34C2A8b2DA", // NFTCollection
+  NFT_MARKET:  "0x18c99417599C028341b72e820C3984d1D1983b32", // NFTMarketplace
+};
+
+// ── ABIs ──────────────────────────────────────────────────────────────────────
+const ERC20_ABI = [
+  "function balanceOf(address) view returns (uint256)",
+  "function approve(address,uint256) returns (bool)",
+  "function allowance(address,address) view returns (uint256)",
+  "function transfer(address,uint256) returns (bool)",
+];
+const FAUCET_ABI = [
+  "function claimTokens() external",
+  "function getTimeUntilNextClaim(address) view returns (uint256)",
+  "function getTotalClaimed(address) view returns (uint256)",
+  "function canClaim(address) view returns (bool)",
+];
+const DEX_ABI = [
+  "function addLiquidity(uint256,uint256,uint256) external",
+  "function removeLiquidity(uint256,uint256) external",
+  "function swap(uint256,address,uint256) external returns (uint256)",
+  "function getReserves(uint256) view returns (uint256,uint256)",
+  "function getPoolTokens(uint256) view returns (address,address)",
+  "function getShares(uint256,address) view returns (uint256,uint256)",
+  "function getAmountOut(uint256,address,uint256) view returns (uint256)",
+];
+const NFT_COL_ABI = [
+  "function totalSupply() view returns (uint256)",
+  "function tokenURI(uint256) view returns (string)",
+  "function ownerOf(uint256) view returns (address)",
+  "function balanceOf(address) view returns (uint256)",
+];
+const NFT_MKT_ABI = [
+  "function buyNFTWithPlatformToken() external returns (uint256)",
+  "function buyNFTWithToken(address) external returns (uint256)",
+  "function listNFT(uint256,uint256) external",
+  "function delistNFT(uint256) external",
+  "function buyListedNFT(uint256) external",
+  "function calculatePriceInToken(address) view returns (uint256)",
+  "function listAllNFTs() view returns (uint256[],string[])",
+  "function availableNFTs() view returns (uint256)",
+  "function nftPriceInPLAT() view returns (uint256)",
+  "function listings(uint256) view returns (address,uint256,bool)",
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let provider, signer, userAddr;
+let platC, tusdC, tbtcC, faucetC, dexC, nftColC, nftMktC;
+let timerInterval;
+
+// Pool config: [poolId, tokenA_key, tokenB_key]
+const POOLS = [
+  { id: 0, a: "PLAT", b: "TUSD" },
+  { id: 1, a: "PLAT", b: "TBTC" },
+  { id: 2, a: "TUSD", b: "TBTC" },
+];
+
+// Swap direction config
+const SWAP_DIRS = {
+  "0,plat,tusd": { pool: 0, inKey: "PLAT", outKey: "TUSD" },
+  "0,tusd,plat": { pool: 0, inKey: "TUSD", outKey: "PLAT" },
+  "1,plat,tbtc": { pool: 1, inKey: "PLAT", outKey: "TBTC" },
+  "1,tbtc,plat": { pool: 1, inKey: "TBTC", outKey: "PLAT" },
+  "2,tusd,tbtc": { pool: 2, inKey: "TUSD", outKey: "TBTC" },
+  "2,tbtc,tusd": { pool: 2, inKey: "TBTC", outKey: "TUSD" },
+};
+
+const TOKEN_LABELS = { PLAT: "PLAT", TUSD: "TUSD", TBTC: "TBTC" };
+const TAG_CLASS    = { PLAT: "tp",   TUSD: "tt",   TBTC: "tb"   };
+
+function fmt(wei) {
+  const n = parseFloat(ethers.utils.formatEther(wei));
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+}
+function fmtN(n) {
+  return parseFloat(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+}
+
+// ── Wallet ────────────────────────────────────────────────────────────────────
+async function connectWallet() {
+  if (!window.ethereum) { alert("Install MetaMask first!"); return; }
+  try {
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer   = provider.getSigner();
+    userAddr = await signer.getAddress();
+
+    platC   = new ethers.Contract(ADDR.PLAT,       ERC20_ABI,   signer);
+    tusdC   = new ethers.Contract(ADDR.TUSD,       ERC20_ABI,   signer);
+    tbtcC   = new ethers.Contract(ADDR.TBTC,       ERC20_ABI,   signer);
+    faucetC = new ethers.Contract(ADDR.FAUCET,     FAUCET_ABI,  signer);
+    dexC    = new ethers.Contract(ADDR.DEX,        DEX_ABI,     signer);
+    nftColC = new ethers.Contract(ADDR.NFT_COL,    NFT_COL_ABI, signer);
+    nftMktC = new ethers.Contract(ADDR.NFT_MARKET, NFT_MKT_ABI, signer);
+
+    const btn = document.getElementById("connBtn");
+    btn.textContent = `✅ ${userAddr.slice(0,6)}...${userAddr.slice(-4)}`;
+    btn.classList.add("ok");
+
+    await Promise.all([loadFaucet(), loadPools(), loadNFTPrices()]);
+    startTimer();
+
+    window.ethereum.on("accountsChanged", () => location.reload());
+  } catch(e) { console.error(e); alert("Connection failed: " + e.message); }
+}
+
+function getTokenContract(key) {
+  return { PLAT: platC, TUSD: tusdC, TBTC: tbtcC }[key];
+}
+
+// ── Page switching ────────────────────────────────────────────────────────────
+function showPage(name, el) {
+  document.querySelectorAll(".pg").forEach(p => p.classList.remove("on"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("on"));
+  document.getElementById("pg-" + name).classList.add("on");
+  el.classList.add("on");
+  if (name === "portfolio" && userAddr) loadPortfolio();
+}
+
+// ── Alert helpers ─────────────────────────────────────────────────────────────
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = "alert on " + type;
+  setTimeout(() => el.classList.remove("on"), 6000);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FAUCET
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadFaucet() {
+  if (!faucetC) return;
+  try {
+    const [bal, claimed, secs] = await Promise.all([
+      platC.balanceOf(userAddr),
+      faucetC.getTotalClaimed(userAddr),
+      faucetC.getTimeUntilNextClaim(userAddr),
+    ]);
+    document.getElementById("f-plat-bal").textContent      = fmt(bal) + " PLAT";
+    document.getElementById("f-total-claimed").textContent = fmt(claimed) + " PLAT";
+    const nextTs = secs.toNumber() === 0 ? "Now!" : new Date(Date.now() + secs.toNumber()*1000).toLocaleTimeString();
+    document.getElementById("f-next-claim").textContent = nextTs;
+  } catch(e) { console.error("loadFaucet:", e); }
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(async () => {
+    if (!faucetC || !userAddr) return;
+    try {
+      const secs = (await faucetC.getTimeUntilNextClaim(userAddr)).toNumber();
+      if (secs === 0) {
+        document.getElementById("timerVal").textContent = "00:00:00";
+        document.getElementById("timerLbl").textContent = "✅ Ready to claim!";
+        document.getElementById("claimBtn").disabled = false;
+      } else {
+        const h = String(Math.floor(secs/3600)).padStart(2,"0");
+        const m = String(Math.floor((secs%3600)/60)).padStart(2,"0");
+        const s = String(secs%60).padStart(2,"0");
+        document.getElementById("timerVal").textContent = `${h}:${m}:${s}`;
+        document.getElementById("timerLbl").textContent = "⏳ Cooldown remaining";
+        document.getElementById("claimBtn").disabled = true;
+      }
+    } catch(e) {}
+  }, 1000);
+}
+
+async function claimTokens() {
+  if (!faucetC) { alert("Connect wallet first!"); return; }
+  const btn = document.getElementById("claimBtn");
+  try {
+    btn.disabled = true; btn.textContent = "⏳ Claiming...";
+    const tx = await faucetC.claimTokens();
+    await tx.wait();
+    showAlert("fa-alert", "✅ 100 PLAT claimed successfully!", "as");
+    await loadFaucet();
+  } catch(e) {
+    showAlert("fa-alert", "❌ " + (e.reason || e.message), "ae");
+    btn.disabled = false;
+  } finally { btn.textContent = "💧 Claim 100 PLAT"; }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEX
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadPools() {
+  if (!dexC) return;
+  try {
+    for (const p of POOLS) {
+      const [ra, rb] = await dexC.getReserves(p.id);
+      const raF = fmt(ra), rbF = fmt(rb);
+      document.getElementById(`p${p.id}ra`).textContent = raF + " " + p.a;
+      document.getElementById(`p${p.id}rb`).textContent = rbF + " " + p.b;
+      const price = ra.gt(0) ? fmtN(parseFloat(ethers.utils.formatEther(rb)) / parseFloat(ethers.utils.formatEther(ra))) : "—";
+      document.getElementById(`p${p.id}pr`).textContent = price;
+      if (userAddr) {
+        const [us] = await dexC.getShares(p.id, userAddr);
+        document.getElementById(`p${p.id}lp`).textContent = fmt(us);
+      }
+    }
+  } catch(e) { console.error("loadPools:", e); }
+}
+
+function onSwapDirChange() {
+  const val = document.getElementById("swapDir").value;
+  const cfg = SWAP_DIRS[val];
+  document.getElementById("swapInTag").textContent  = cfg.inKey;
+  document.getElementById("swapInTag").className    = "itag " + TAG_CLASS[cfg.inKey];
+  document.getElementById("swapPrev").textContent   = "Enter amount to preview";
+  document.getElementById("swapIn").value           = "";
+  updateSwapBalance();
+}
+
+async function updateSwapBalance() {
+  if (!userAddr) return;
+  const val = document.getElementById("swapDir").value;
+  const cfg = SWAP_DIRS[val];
+  try {
+    const bal = await getTokenContract(cfg.inKey).balanceOf(userAddr);
+    document.getElementById("swapInBal").textContent = fmt(bal) + " " + cfg.inKey;
+  } catch(e) {}
+}
+
+async function previewSwap() {
+  const amt = document.getElementById("swapIn").value;
+  if (!amt || parseFloat(amt) <= 0 || !dexC) {
+    document.getElementById("swapPrev").innerHTML = "Enter amount to preview"; return;
+  }
+  const val = document.getElementById("swapDir").value;
+  const cfg = SWAP_DIRS[val];
+  try {
+    const amtWei = ethers.utils.parseEther(amt);
+    const out    = await dexC.getAmountOut(cfg.pool, ADDR[cfg.inKey], amtWei);
+    document.getElementById("swapPrev").innerHTML =
+      `You get: <b>${fmt(out)} ${cfg.outKey}</b>`;
+  } catch(e) { document.getElementById("swapPrev").textContent = "Error calculating"; }
+}
+
+async function doSwap() {
+  if (!dexC) { alert("Connect wallet!"); return; }
+  const amt = document.getElementById("swapIn").value;
+  if (!amt || parseFloat(amt) <= 0) { alert("Enter amount"); return; }
+  const val = document.getElementById("swapDir").value;
+  const cfg = SWAP_DIRS[val];
+  const btn = document.getElementById("swapBtn");
+  try {
+    btn.disabled = true; btn.textContent = "Step 1/2: Approving...";
+    const amtWei = ethers.utils.parseEther(amt);
+    const tokC   = getTokenContract(cfg.inKey);
+    const appTx  = await tokC.approve(ADDR.DEX, amtWei);
+    await appTx.wait();
+    btn.textContent = "Step 2/2: Swapping...";
+    const swTx = await dexC.swap(cfg.pool, ADDR[cfg.inKey], amtWei);
+    await swTx.wait();
+    showAlert("dex-alert", `✅ Swapped ${amt} ${cfg.inKey} → ${cfg.outKey}`, "as");
+    document.getElementById("swapIn").value = "";
+    document.getElementById("swapPrev").textContent = "Enter amount to preview";
+    await loadPools();
+  } catch(e) {
+    showAlert("dex-alert", "❌ " + (e.reason || e.message), "ae");
+  } finally { btn.disabled = false; btn.textContent = "⚡ Swap"; }
+}
+
+function onLiqPoolChange() {
+  const id = parseInt(document.getElementById("liqPool").value);
+  const p  = POOLS[id];
+  document.getElementById("liqTagA").textContent  = p.a;
+  document.getElementById("liqTagA").className    = "itag " + TAG_CLASS[p.a];
+  document.getElementById("liqTagB").textContent  = p.b;
+  document.getElementById("liqTagB").className    = "itag " + TAG_CLASS[p.b];
+}
+
+async function doAddLiquidity() {
+  if (!dexC) { alert("Connect wallet!"); return; }
+  const id   = parseInt(document.getElementById("liqPool").value);
+  const amtA = document.getElementById("liqA").value;
+  const amtB = document.getElementById("liqB").value;
+  if (!amtA || !amtB) { alert("Enter both amounts"); return; }
+  const p    = POOLS[id];
+  const btn  = document.getElementById("addLiqBtn");
+  try {
+    btn.disabled = true; btn.textContent = "Approving...";
+    const wA = ethers.utils.parseEther(amtA);
+    const wB = ethers.utils.parseEther(amtB);
+    await (await getTokenContract(p.a).approve(ADDR.DEX, wA)).wait();
+    await (await getTokenContract(p.b).approve(ADDR.DEX, wB)).wait();
+    btn.textContent = "Adding...";
+    await (await dexC.addLiquidity(id, wA, wB)).wait();
+    showAlert("dex-alert", `✅ Liquidity added to Pool ${id}`, "as");
+    await loadPools();
+  } catch(e) { showAlert("dex-alert", "❌ " + (e.reason || e.message), "ae"); }
+  finally { btn.disabled = false; btn.textContent = "➕ Add"; }
+}
+
+async function doRemoveLiquidity() {
+  if (!dexC) { alert("Connect wallet!"); return; }
+  const id     = parseInt(document.getElementById("liqPool").value);
+  const shares = document.getElementById("rmShares").value;
+  if (!shares) { alert("Enter shares amount"); return; }
+  try {
+    const tx = await dexC.removeLiquidity(id, ethers.utils.parseEther(shares));
+    await tx.wait();
+    showAlert("dex-alert", `✅ Liquidity removed from Pool ${id}`, "as");
+    await loadPools();
+  } catch(e) { showAlert("dex-alert", "❌ " + (e.reason || e.message), "ae"); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NFT MARKETPLACE
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadNFTPrices() {
+  if (!nftMktC) return;
+  try {
+    const pricePlat = await nftMktC.nftPriceInPLAT();
+    document.getElementById("np-plat").textContent = fmt(pricePlat) + " PLAT";
+    try {
+      const pTusd = await nftMktC.calculatePriceInToken(ADDR.TUSD);
+      document.getElementById("np-tusd").textContent = fmt(pTusd) + " TUSD";
+    } catch { document.getElementById("np-tusd").textContent = "No pool"; }
+    try {
+      const pTbtc = await nftMktC.calculatePriceInToken(ADDR.TBTC);
+      document.getElementById("np-tbtc").textContent = fmt(pTbtc) + " TBTC";
+    } catch { document.getElementById("np-tbtc").textContent = "No pool"; }
+    const avail  = await nftMktC.availableNFTs();
+    const minted = await nftColC.totalSupply();
+    document.getElementById("nft-avail").textContent  = avail.toString();
+    document.getElementById("nft-minted").textContent = minted.toString();
+  } catch(e) { console.error("loadNFTPrices:", e); }
+}
+
+async function updateNftPreview() {
+  const tok = document.getElementById("nftPayTok").value.toUpperCase();
+  if (!nftMktC) { document.getElementById("nftBuyPrev").textContent = "Connect wallet"; return; }
+  try {
+    if (tok === "PLAT") {
+      const p = await nftMktC.nftPriceInPLAT();
+      document.getElementById("nftBuyPrev").innerHTML = `Cost: <b>${fmt(p)} PLAT</b>`;
+    } else {
+      const p = await nftMktC.calculatePriceInToken(ADDR[tok]);
+      document.getElementById("nftBuyPrev").innerHTML = `Cost: <b>${fmt(p)} ${tok}</b>`;
+    }
+  } catch(e) { document.getElementById("nftBuyPrev").textContent = "Error: " + e.reason; }
+}
+
+async function doBuyNFT() {
+  if (!nftMktC) { alert("Connect wallet!"); return; }
+  const tok = document.getElementById("nftPayTok").value.toUpperCase();
+  const btn = document.getElementById("buyNftBtn");
+  try {
+    btn.disabled = true; btn.textContent = "Approving...";
+    if (tok === "PLAT") {
+      const price = await nftMktC.nftPriceInPLAT();
+      await (await platC.approve(ADDR.NFT_MARKET, price)).wait();
+      btn.textContent = "Buying...";
+      const tx = await nftMktC.buyNFTWithPlatformToken();
+      await tx.wait();
+    } else {
+      const price = await nftMktC.calculatePriceInToken(ADDR[tok]);
+      await (await getTokenContract(tok).approve(ADDR.NFT_MARKET, price)).wait();
+      btn.textContent = "Buying...";
+      const tx = await nftMktC.buyNFTWithToken(ADDR[tok]);
+      await tx.wait();
+    }
+    showAlert("nft-alert", `✅ NFT purchased with ${tok}!`, "as");
+    await Promise.all([loadNFTPrices(), loadNFTs()]);
+  } catch(e) { showAlert("nft-alert", "❌ " + (e.reason || e.message), "ae"); }
+  finally { btn.disabled = false; btn.textContent = "🛒 Buy NFT"; }
+}
+
+async function loadNFTs() {
+  if (!nftMktC) { alert("Connect wallet!"); return; }
+  const gallery = document.getElementById("nftGallery");
+  gallery.innerHTML = "<div style='color:var(--mut);padding:20px;grid-column:1/-1'>Loading...</div>";
+  try {
+    const [ids, uris] = await nftMktC.listAllNFTs();
+    if (ids.length === 0) {
+      gallery.innerHTML = "<div style='color:var(--mut);padding:20px;grid-column:1/-1'>No NFTs minted yet</div>";
+      return;
+    }
+    gallery.innerHTML = "";
+    for (let i = 0; i < ids.length; i++) {
+      const meta = await fetchMeta(uris[i]);
+      const owner = await nftColC.ownerOf(ids[i]);
+      const listing = await nftMktC.listings(ids[i]);
+      gallery.appendChild(buildNFTCard(ids[i], meta, owner, listing));
+    }
+  } catch(e) { gallery.innerHTML = `<div style='color:red;padding:20px;grid-column:1/-1'>Error: ${e.message}</div>`; }
+}
+
+async function fetchMeta(uri) {
+  try {
+    const url = uri.replace("ipfs://", "https://ipfs.io/ipfs/");
+    const res = await fetch(url);
+    return await res.json();
+  } catch { return { name: "NFT", description: "", image: "", attributes: [] }; }
+}
+
+function buildNFTCard(id, meta, owner, listing) {
+  const div = document.createElement("div");
+  div.className = "nft-card";
+  const imgSrc = meta.image ? meta.image.replace("ipfs://", "https://ipfs.io/ipfs/") : "";
+  const isListed = listing && listing[2];
+  const traits = (meta.attributes || []).slice(0,2).map(a => `<span class="chip cp" style="margin-right:4px">${a.trait_type}: ${a.value}</span>`).join("");
+  div.innerHTML = `
+    ${imgSrc
+      ? `<img class="nft-img" src="${imgSrc}" alt="${meta.name}" onerror="this.style.display='none'">`
+      : `<div class="nft-img">🖼️</div>`}
+    <div class="nft-info">
+      <div class="nft-name">#${id} ${meta.name || "PlatformNFT"}</div>
+      <div style="margin:4px 0">${traits}</div>
+      <div class="nft-price">Owner: ${owner.slice(0,6)}...${owner.slice(-4)}</div>
+      ${isListed ? `<div class="nft-price" style="color:#10b981;margin-top:4px">🏷️ Listed: <b>${fmt(listing[1])} PLAT</b></div>` : ""}
+    </div>`;
+  return div;
+}
+
+async function doListNFT() {
+  if (!nftMktC) { alert("Connect wallet!"); return; }
+  const tokenId = document.getElementById("listTokenId").value;
+  const price   = document.getElementById("listPrice").value;
+  if (!tokenId || !price) { alert("Fill both fields"); return; }
+  try {
+    // Approve marketplace to transfer NFT
+    const nftWithApprove = new ethers.Contract(ADDR.NFT_COL,
+      ["function approve(address,uint256) external"], signer);
+    await (await nftWithApprove.approve(ADDR.NFT_MARKET, tokenId)).wait();
+    const tx = await nftMktC.listNFT(tokenId, ethers.utils.parseEther(price));
+    await tx.wait();
+    showAlert("nft-alert", `✅ NFT #${tokenId} listed for ${price} PLAT`, "as");
+  } catch(e) { showAlert("nft-alert", "❌ " + (e.reason || e.message), "ae"); }
+}
+
+async function doBuyListed() {
+  if (!nftMktC) { alert("Connect wallet!"); return; }
+  const tokenId = document.getElementById("buySecId").value;
+  if (!tokenId) { alert("Enter token ID"); return; }
+  try {
+    const listing = await nftMktC.listings(tokenId);
+    if (!listing[2]) { alert("NFT not listed"); return; }
+    await (await platC.approve(ADDR.NFT_MARKET, listing[1])).wait();
+    const tx = await nftMktC.buyListedNFT(tokenId);
+    await tx.wait();
+    showAlert("nft-alert", `✅ Bought NFT #${tokenId}!`, "as");
+    await loadNFTs();
+  } catch(e) { showAlert("nft-alert", "❌ " + (e.reason || e.message), "ae"); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PORTFOLIO
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadPortfolio() {
+  if (!platC || !userAddr) { alert("Connect wallet!"); return; }
+  try {
+    const [bp, bt, bb] = await Promise.all([
+      platC.balanceOf(userAddr),
+      tusdC.balanceOf(userAddr),
+      tbtcC.balanceOf(userAddr),
+    ]);
+    const platFmt = fmt(bp) + " PLAT";
+    document.getElementById("port-plat-big").textContent = platFmt;
+    document.getElementById("port-plat").textContent     = fmt(bp);
+    document.getElementById("port-tusd").textContent     = fmt(bt);
+    document.getElementById("port-tbtc").textContent     = fmt(bb);
+
+    // My NFTs
+    const total   = (await nftColC.totalSupply()).toNumber();
+    const myNfts  = document.getElementById("myNfts");
+    myNfts.innerHTML = "";
+    let found = 0;
+    for (let i = 1; i <= total; i++) {
+      const owner = await nftColC.ownerOf(i);
+      if (owner.toLowerCase() === userAddr.toLowerCase()) {
+        const uri  = await nftColC.tokenURI(i);
+        const meta = await fetchMeta(uri);
+        myNfts.appendChild(buildNFTCard(i, meta, owner, null));
+        found++;
+      }
+    }
+    if (found === 0) myNfts.innerHTML = "<div style='color:var(--mut);padding:20px;grid-column:1/-1'>You don't own any NFTs yet</div>";
+  } catch(e) { console.error("loadPortfolio:", e); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+onSwapDirChange();
+onLiqPoolChange();
+</script>
+</body>
+</html>

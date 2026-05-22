@@ -329,6 +329,43 @@
         </div>
     </div>
 
+    <!-- ADD LIQUIDITY CARD -->
+    <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title" style="font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+            💧 Add Liquidity
+            <span style="flex:1;height:1px;background:var(--border);display:block;"></span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+                <label for="liqAmountA">Token A Amount</label>
+                <div class="input-group">
+                    <input type="number" id="liqAmountA" placeholder="0.00" min="0">
+                    <span class="input-tag tag-a">ALPHA</span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:-6px;margin-bottom:8px;">
+                    Balance: <span id="balA" style="font-weight:700;color:#6366f1;">—</span> ALPHA
+                </div>
+            </div>
+            <div>
+                <label for="liqAmountB">Token B Amount</label>
+                <div class="input-group">
+                    <input type="number" id="liqAmountB" placeholder="0.00" min="0">
+                    <span class="input-tag tag-b">BETA</span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:-6px;margin-bottom:8px;">
+                    Balance: <span id="balB" style="font-weight:700;color:#10b981;">—</span> BETA
+                </div>
+            </div>
+        </div>
+        <div class="preview-box" style="margin-top:4px;">
+            <span class="pb-icon">💧</span>
+            <span id="liqPreview">Enter amounts to preview liquidity deposit</span>
+        </div>
+        <button id="addLiqBtn" class="swap-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;box-shadow:0 4px 16px rgba(245,158,11,0.35);margin-top:4px;">
+            ➕ Add Liquidity
+        </button>
+    </div>
+
     <!-- BOTTOM ROW: pool info + 2 swap cards -->
     <div class="grid-bottom">
 
@@ -374,6 +411,9 @@
                 <input type="number" id="swapAmountA" placeholder="0.00" min="0">
                 <span class="input-tag tag-a">ALPHA</span>
             </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:-6px;margin-bottom:10px;">
+                Balance: <span id="balA2" style="font-weight:700;color:#6366f1;">—</span> ALPHA
+            </div>
             <div class="preview-box">
                 <span class="pb-icon">⟳</span>
                 <span id="previewA">Estimated Output: 0.00 BETA</span>
@@ -394,6 +434,9 @@
                 <input type="number" id="swapAmountB" placeholder="0.00" min="0">
                 <span class="input-tag tag-b">BETA</span>
             </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:-6px;margin-bottom:10px;">
+                Balance: <span id="balB2" style="font-weight:700;color:#10b981;">—</span> BETA
+            </div>
             <div class="preview-box">
                 <span class="pb-icon">⟳</span>
                 <span id="previewB">Estimated Output: 0.00 ALPHA</span>
@@ -412,13 +455,15 @@
     const SWAP_CONTRACT_ADDRESS = "0xda5C751b0a73b67159146Be184c1e1b3861feBB9"; 
 
     const erc20ABI = [
-        "function approve(address spender, uint256 amount) external returns (bool)"
+        "function approve(address spender, uint256 amount) external returns (bool)",
+        "function balanceOf(address account) external view returns (uint256)"
     ];
     const swapABI = [
         "function getReserves() external view returns (uint256, uint256)",
         "function swapAforB(uint256 amountAIn) external",
         "function swapBforA(uint256 amountBIn) external",
-        "function getSwapAmount(uint256 amountIn, bool _swapAforB) external view returns (uint256)"
+        "function getSwapAmount(uint256 amountIn, bool _swapAforB) external view returns (uint256)",
+        "function addLiquidity(uint256 amountA, uint256 amountB) external"
     ];
 
     let provider, signer, tokenAContract, tokenBContract, swapContract;
@@ -455,6 +500,7 @@
                 connectBtn.classList.add("btn-connected");
 
                 await updatePoolStats();
+                await updateBalances();
                 setupLiveListeners();
             } catch (error) {
                 console.error("Wallet connection broken:", error);
@@ -463,6 +509,21 @@
         } else {
             alert("Please install MetaMask to evaluate your dApp!");
         }
+    }
+
+    async function updateBalances() {
+        if (!signer || !tokenAContract || !tokenBContract) return;
+        try {
+            const userAddress = await signer.getAddress();
+            const balA = ethers.utils.formatEther(await tokenAContract.balanceOf(userAddress));
+            const balB = ethers.utils.formatEther(await tokenBContract.balanceOf(userAddress));
+            const fmt = (v) => parseFloat(v).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            document.getElementById("balA").innerText  = fmt(balA);
+            document.getElementById("balA2").innerText = fmt(balA);
+            document.getElementById("balB").innerText  = fmt(balB);
+            document.getElementById("balB2").innerText = fmt(balB);
+        } catch(e) { console.error("Balance fetch failed:", e); }
     }
 
     async function updatePoolStats() {
@@ -516,6 +577,13 @@
         try {
             swapBtnA.disabled = true;
             const amountWei = ethers.utils.parseEther(amountStr);
+            const userAddress = await signer.getAddress();
+            const balance = await tokenAContract.balanceOf(userAddress);
+            if (balance.lt(amountWei)) {
+                alert(`Insufficient ALPHA balance.\nYou have: ${ethers.utils.formatEther(balance)} ALPHA\nRequired: ${amountStr} ALPHA`);
+                swapBtnA.disabled = false;
+                return;
+            }
             swapBtnA.innerText = "Step 1/2: Approving ALPHA...";
             const txApprove = await tokenAContract.approve(SWAP_CONTRACT_ADDRESS, amountWei);
             try {
@@ -532,6 +600,7 @@
             swapAmountA.value = "";
             previewA.innerText = "Estimated Output: 0.00 BETA";
             await updatePoolStats();
+            await updateBalances();
         } catch (error) {
             console.error(error);
             alert("Transaction failed.");
@@ -547,6 +616,13 @@
         try {
             swapBtnB.disabled = true;
             const amountWei = ethers.utils.parseEther(amountStr);
+            const userAddress = await signer.getAddress();
+            const balance = await tokenBContract.balanceOf(userAddress);
+            if (balance.lt(amountWei)) {
+                alert(`Insufficient BETA balance.\nYou have: ${ethers.utils.formatEther(balance)} BETA\nRequired: ${amountStr} BETA`);
+                swapBtnB.disabled = false;
+                return;
+            }
             swapBtnB.innerText = "Step 1/2: Approving BETA...";
             const txApprove = await tokenBContract.approve(SWAP_CONTRACT_ADDRESS, amountWei);
             await txApprove.wait();
@@ -557,6 +633,7 @@
             swapAmountB.value = "";
             previewB.innerText = "Estimated Output: 0.00 ALPHA";
             await updatePoolStats();
+            await updateBalances();
         } catch (error) {
             console.error(error);
             alert("Transaction failed.");
@@ -569,6 +646,62 @@
     connectBtn.addEventListener("click", connectWallet);
     swapBtnA.addEventListener("click", executeSwapA);
     swapBtnB.addEventListener("click", executeSwapB);
+
+    // Add Liquidity
+    const liqAmountA = document.getElementById("liqAmountA");
+    const liqAmountB = document.getElementById("liqAmountB");
+    const liqPreview = document.getElementById("liqPreview");
+    const addLiqBtn  = document.getElementById("addLiqBtn");
+
+    function updateLiqPreview() {
+        const a = liqAmountA.value;
+        const b = liqAmountB.value;
+        if (a && b && parseFloat(a) > 0 && parseFloat(b) > 0) {
+            liqPreview.innerHTML = `Depositing <strong>${a} ALPHA</strong> + <strong>${b} BETA</strong> into pool`;
+        } else {
+            liqPreview.innerText = "Enter amounts to preview liquidity deposit";
+        }
+    }
+    liqAmountA.addEventListener("input", updateLiqPreview);
+    liqAmountB.addEventListener("input", updateLiqPreview);
+
+    addLiqBtn.addEventListener("click", async () => {
+        const aStr = liqAmountA.value;
+        const bStr = liqAmountB.value;
+        if (!aStr || !bStr || parseFloat(aStr) <= 0 || parseFloat(bStr) <= 0)
+            return alert("Enter both amounts.");
+        if (!swapContract) return alert("Connect wallet first.");
+        try {
+            addLiqBtn.disabled = true;
+            const amountA = ethers.utils.parseEther(aStr);
+            const amountB = ethers.utils.parseEther(bStr);
+
+            addLiqBtn.innerText = "Step 1/3: Approving ALPHA...";
+            const txA = await tokenAContract.approve(SWAP_CONTRACT_ADDRESS, amountA);
+            await txA.wait();
+
+            addLiqBtn.innerText = "Step 2/3: Approving BETA...";
+            const txB = await tokenBContract.approve(SWAP_CONTRACT_ADDRESS, amountB);
+            await txB.wait();
+
+            addLiqBtn.innerText = "Step 3/3: Adding Liquidity...";
+            const tx = await swapContract.addLiquidity(amountA, amountB);
+            await tx.wait();
+
+            alert("Liquidity added successfully!");
+            liqAmountA.value = "";
+            liqAmountB.value = "";
+            liqPreview.innerText = "Enter amounts to preview liquidity deposit";
+            await updatePoolStats();
+            await updateBalances();
+        } catch (err) {
+            console.error(err);
+            alert("Transaction failed.");
+        } finally {
+            addLiqBtn.disabled = false;
+            addLiqBtn.innerText = "➕ Add Liquidity";
+        }
+    });
 </script>
 </body>
 </html>
